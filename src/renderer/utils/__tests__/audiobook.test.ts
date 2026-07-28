@@ -145,6 +145,19 @@ test('pauses and resumes the same sentence without replacing its utterance', () 
   expect(controller.getState()).toEqual({ playing: true, activeSentence: 0, error: null })
 })
 
+test('replaces playing speech when toggled at a different sentence', () => {
+  const { controller, speech, utterances, sync } = createSpeechHarness()
+  sync()
+  controller.startAt(0)
+
+  controller.toggle(1)
+
+  expect(speech.pause).not.toHaveBeenCalled()
+  expect(speech.cancel).toHaveBeenCalledTimes(2)
+  expect(utterances.map(utterance => utterance.text)).toEqual(['第一句。', '第二句。'])
+  expect(controller.getState()).toEqual({ playing: true, activeSentence: 1, error: null })
+})
+
 test('restarts the active sentence when the rate changes', () => {
   const { controller, utterances, sync } = createSpeechHarness()
   sync({ rate: 1 })

@@ -149,7 +149,7 @@ export function createAudiobookController({
 
   const toggle = (sentence: number) => {
     if (!speech || !supported) return
-    if (state.playing) {
+    if (state.playing && state.activeSentence === sentence) {
       speech.pause()
       paused = true
       updateState({ ...state, playing: false })
