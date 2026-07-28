@@ -2,6 +2,7 @@ const setContentProtection = jest.fn()
 const send = jest.fn()
 const show = jest.fn()
 const focus = jest.fn()
+const getCursorScreenPoint = jest.fn()
 
 const browserWindow = {
   loadFile: jest.fn(),
@@ -10,6 +11,7 @@ const browserWindow = {
   webContents: { send },
   isVisible: jest.fn(() => true),
   getPosition: jest.fn(() => [10, 20]),
+  getBounds: jest.fn(() => ({ x: 10, y: 20, width: 400, height: 600 })),
   setPosition: jest.fn(),
   hide: jest.fn(),
   show,
@@ -18,7 +20,10 @@ const browserWindow = {
 
 jest.mock('electron', () => ({
   BrowserWindow: jest.fn(() => browserWindow),
-  screen: { getPrimaryDisplay: () => ({ workAreaSize: { width: 1440, height: 900 } }) }
+  screen: {
+    getPrimaryDisplay: () => ({ workAreaSize: { width: 1440, height: 900 } }),
+    getCursorScreenPoint
+  }
 }))
 
 import { TransparentWindow } from '../window'
@@ -42,4 +47,18 @@ test('reveals auto-hidden content and focuses its window', () => {
   expect(show).toHaveBeenCalled()
   expect(focus).toHaveBeenCalled()
   expect(window.isAutoHidden()).toBe(false)
+})
+
+test('treats the drag region and resize border as inside the window', () => {
+  const window = new TransparentWindow()
+  window.create()
+
+  getCursorScreenPoint.mockReturnValueOnce({ x: 210, y: 20 })
+  expect(window.containsCursor()).toBe(true)
+
+  getCursorScreenPoint.mockReturnValueOnce({ x: 410, y: 320 })
+  expect(window.containsCursor()).toBe(true)
+
+  getCursorScreenPoint.mockReturnValueOnce({ x: 419, y: 320 })
+  expect(window.containsCursor()).toBe(false)
 })

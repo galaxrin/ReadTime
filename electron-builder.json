@@ -16,7 +16,8 @@
   },
   "files": [
     "dist/**/*",
-    "assets/**/*",
+    "assets/fonts/**/*",
+    "assets/tray/trayTemplate*.png",
     "package.json"
   ]
 }

@@ -9,6 +9,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   listFonts: () => ipcRenderer.invoke('fonts:list'),
   importFont: () => ipcRenderer.invoke('fonts:import'),
   updateBossKey: (shortcut: string) => ipcRenderer.invoke('shortcut:update', shortcut),
+  windowContainsCursor: () => ipcRenderer.invoke('window:contains-cursor'),
   setWindowAutoHidden: (hidden: boolean) => ipcRenderer.send('window:auto-hidden', hidden),
   onWindowReveal: (callback: () => void) => {
     ipcRenderer.on('window:reveal', callback)
