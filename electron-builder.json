@@ -1,0 +1,22 @@
+{
+  "appId": "com.readtime.app",
+  "productName": "ReadTime",
+  "mac": {
+    "icon": "assets/readtime-logo.png",
+    "category": "public.app-category.utilities",
+    "target": [
+      {
+        "target": "dmg",
+        "arch": ["x64", "arm64"]
+      }
+    ]
+  },
+  "directories": {
+    "output": "release"
+  },
+  "files": [
+    "dist/**/*",
+    "assets/**/*",
+    "package.json"
+  ]
+}

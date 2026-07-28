@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ReadTime</title>
+  <style>
+    @font-face {
+      font-family: "ReadTime Ma Shan Zheng";
+      src: url("../../assets/fonts/MaShanZheng-Regular.ttf") format("truetype");
+      font-display: swap;
+    }
+    @font-face {
+      font-family: "ReadTime ZCOOL XiaoWei";
+      src: url("../../assets/fonts/ZCOOLXiaoWei-Regular.ttf") format("truetype");
+      font-display: swap;
+    }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: transparent;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      overflow: hidden;
+      margin: 0;
+      padding: 0;
+    }
+
+    #root {
+      width: 100%;
+      height: 100vh;
+      background: transparent;
+    }
+
+    .draggable {
+      -webkit-app-region: drag;
+    }
+
+    .non-draggable {
+      -webkit-app-region: no-drag;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script>
+    // Debug: Check if root element exists
+    console.log('Root element:', document.getElementById('root'));
+
+    // Global error handler
+    window.onerror = function(msg, url, line, col, error) {
+      console.error('Global error:', msg, url, line, col, error);
+      document.getElementById('root').innerHTML = '<div style="color:red;padding:20px;">Error: ' + msg + '</div>';
+      return true;
+    };
+
+    window.addEventListener('unhandledrejection', function(event) {
+      console.error('Unhandled rejection:', event.reason);
+      document.getElementById('root').innerHTML = '<div style="color:red;padding:20px;">Unhandled rejection: ' + event.reason + '</div>';
+    });
+  </script>
+  <script type="module" src="./src/renderer/main.tsx"></script>
+</body>
+</html>
