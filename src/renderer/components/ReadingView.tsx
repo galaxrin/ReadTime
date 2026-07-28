@@ -2,7 +2,11 @@
 import React, { useRef, useEffect, useCallback } from 'react'
 import { useReading } from '../contexts/ReadingContext'
 import { ProgressManager } from '../utils/progressManager'
-import { nextScrollPosition, shouldAdvanceChapter } from '../utils/autoScroll'
+import {
+  nextScrollPosition,
+  shouldAdvanceChapter,
+  shouldReturnPreviousChapter
+} from '../utils/autoScroll'
 import './ReadingView.css'
 
 const DEFAULT_LINE_HEIGHT = 24
@@ -21,11 +25,12 @@ interface ReadingViewProps {
 }
 
 export function ReadingView({ autoScrolling, speed, onPause, onManualScroll }: ReadingViewProps) {
-  const { state, setCurrentLine, nextChapter } = useReading()
+  const { state, setCurrentLine, nextChapter, prevChapter } = useReading()
   const contentRef = useRef<HTMLDivElement>(null)
   const progressManagerRef = useRef<ProgressManager | null>(null)
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const chapterAdvanceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const returnToChapterEndRef = useRef(false)
 
   const { chapters, currentChapter, currentLine, filePath, activeBook, isLoading, error } = state
 
@@ -76,10 +81,14 @@ export function ReadingView({ autoScrolling, speed, onPause, onManualScroll }: R
 
   // Scroll to saved line position when chapter changes
   useEffect(() => {
-    if (contentRef.current && currentLine > 0) {
-      const lineHeight = parseLineHeight(contentRef.current)
-      contentRef.current.scrollTop = currentLine * lineHeight
+    const element = contentRef.current
+    if (!element) return
+    if (returnToChapterEndRef.current) {
+      returnToChapterEndRef.current = false
+      element.scrollTop = element.scrollHeight - element.clientHeight
+      return
     }
+    if (currentLine > 0) element.scrollTop = currentLine * parseLineHeight(element)
   }, [activeBook?.id, currentChapter]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleScroll = () => {
@@ -95,17 +104,24 @@ export function ReadingView({ autoScrolling, speed, onPause, onManualScroll }: R
     onManualScroll()
 
     const element = contentRef.current
-    if (!element || chapterAdvanceTimerRef.current || !shouldAdvanceChapter(
+    if (!element || chapterAdvanceTimerRef.current) return
+
+    if (shouldReturnPreviousChapter(event.deltaY, element.scrollTop, currentChapter)) {
+      returnToChapterEndRef.current = true
+      prevChapter()
+    } else if (shouldAdvanceChapter(
       event.deltaY,
       element.scrollTop,
       element.clientHeight,
       element.scrollHeight,
       currentChapter,
       chapters.length
-    )) return
-
-    element.scrollTop = 0
-    nextChapter()
+    )) {
+      element.scrollTop = 0
+      nextChapter()
+    } else {
+      return
+    }
     chapterAdvanceTimerRef.current = setTimeout(() => {
       chapterAdvanceTimerRef.current = null
     }, 500)
