@@ -1,11 +1,11 @@
 // src/renderer/components/Settings.tsx
 import React, { useEffect, useRef, useState } from 'react'
-import { AUTO_SCROLL_SPEEDS, useSettings } from '../contexts/SettingsContext'
+import { AUDIOBOOK_RATES, AUTO_SCROLL_SPEEDS, useSettings } from '../contexts/SettingsContext'
 import './Settings.css'
 
 export function Settings() {
-  const { state, setTheme, updateFontSize, updateLineHeight, updateOpacity, toggleSettings, updateAutoScrollSpeed, updateReadingFont, importFont, updateAutoHideOnMouseLeave } = useSettings()
-  const { currentTheme, themes, frequentThemes, showSettings, autoScrollSpeed, readingFont, customFonts, autoHideOnMouseLeave } = state
+  const { state, setTheme, updateFontSize, updateLineHeight, updateOpacity, toggleSettings, updateAutoScrollSpeed, updateAudiobookRate, updateReadingFont, importFont, updateAutoHideOnMouseLeave } = useSettings()
+  const { currentTheme, themes, frequentThemes, showSettings, autoScrollSpeed, audiobookRate, readingFont, customFonts, autoHideOnMouseLeave } = state
   const defaultShortcut = 'CommandOrControl+Shift+H'
   const [shortcut, setShortcut] = useState(() => localStorage.getItem('readtime-boss-key') || defaultShortcut)
   const [shortcutError, setShortcutError] = useState('')
@@ -105,6 +105,21 @@ export function Settings() {
           {AUTO_SCROLL_SPEEDS.map(speed => (
             <button key={speed.value} className={speed.value === autoScrollSpeed ? 'active' : ''}
               onClick={() => updateAutoScrollSpeed(speed.value)}>{speed.label}</button>
+          ))}
+        </div>
+      </div>
+
+      <div className="settings-section">
+        <label className="settings-label">听书语速</label>
+        <div className="speed-options">
+          {AUDIOBOOK_RATES.map(rate => (
+            <button
+              key={rate}
+              className={rate === audiobookRate ? 'active' : ''}
+              onClick={() => updateAudiobookRate(rate)}
+            >
+              {rate}×
+            </button>
           ))}
         </div>
       </div>

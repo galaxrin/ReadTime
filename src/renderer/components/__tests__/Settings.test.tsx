@@ -9,6 +9,7 @@ jest.mock('../../contexts/SettingsContext', () => ({
     { label: '中速', value: 60 },
     { label: '高速', value: 100 }
   ],
+  AUDIOBOOK_RATES: [0.75, 1, 1.25, 1.5, 2],
   useSettings: jest.fn()
 }))
 jest.mock('../Settings.css', () => ({}))
@@ -30,6 +31,7 @@ test('exposes the selected theme through aria-pressed', () => {
       frequentThemes: defaultThemes.slice(0, 4),
       showSettings: true,
       autoScrollSpeed: 60,
+      audiobookRate: 1,
       readingFont: 'serif',
       customFonts: [],
       autoHideOnMouseLeave: false
@@ -40,6 +42,7 @@ test('exposes the selected theme through aria-pressed', () => {
     updateOpacity: jest.fn(),
     toggleSettings: jest.fn(),
     updateAutoScrollSpeed: jest.fn(),
+    updateAudiobookRate: jest.fn(),
     updateReadingFont: jest.fn(),
     importFont: jest.fn(),
     updateAutoHideOnMouseLeave: jest.fn()
@@ -50,5 +53,8 @@ test('exposes the selected theme through aria-pressed', () => {
   expect(markup.match(/aria-pressed="true"/g)).toHaveLength(1)
   expect(markup.match(/aria-pressed="false"/g)).toHaveLength(3)
   expect(markup).toContain('type="checkbox"')
+  expect(markup).toContain('听书语速')
+  expect(markup).toContain('>1×</button>')
+  expect(markup).toContain('>2×</button>')
   expect(markup).toContain('ReadTime by 脏咖喱 · Galaxrin')
 })
