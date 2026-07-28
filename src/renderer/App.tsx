@@ -8,6 +8,8 @@ import { Settings } from './components/Settings'
 import { useReading } from './contexts/ReadingContext'
 import { useSettings } from './contexts/SettingsContext'
 import { shouldAutoHide } from './utils/autoHide'
+import { firstVisibleSentence } from './utils/audiobook'
+import { useAudiobook } from './hooks/useAudiobook'
 
 // Error Boundary
 class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean; error: Error | null }> {
@@ -41,11 +43,18 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boole
 }
 
 function AppContent() {
-  const { importBook, nextChapter, prevChapter } = useReading()
+  const { state: readingState, importBook, nextChapter, prevChapter } = useReading()
   const { state: settingsState, toggleSettings, updateFontSize } = useSettings()
   const { currentTheme } = settingsState
   const [autoScrolling, setAutoScrolling] = useState(false)
   const pauseAutoScroll = useCallback(() => setAutoScrolling(false), [])
+  const audiobook = useAudiobook({
+    content: readingState.chapters[readingState.currentChapter]?.content || '',
+    currentChapter: readingState.currentChapter,
+    chapterCount: readingState.chapters.length,
+    rate: settingsState.audiobookRate,
+    nextChapter
+  })
   const [showControls, setShowControls] = useState(false)
   const [controlOverlayOpen, setControlOverlayOpen] = useState(false)
   const [autoHidden, setAutoHidden] = useState(false)
@@ -102,12 +111,40 @@ function AppContent() {
     }
   }, [cancelPendingAutoHide])
 
-  const toggleAutoScroll = useCallback(() => {
-    setAutoScrolling(value => {
-      if (!value) setShowControls(false)
-      return !value
+  const getVisibleSentenceIndex = useCallback(() => {
+    const view = document.querySelector<HTMLElement>('.reading-view')
+    if (!view) return 0
+    const viewRect = view.getBoundingClientRect()
+    const rects = Array.from(view.querySelectorAll<HTMLElement>('[data-sentence]'), element => {
+      const rect = element.getBoundingClientRect()
+      return { top: rect.top, bottom: rect.bottom }
     })
+    return firstVisibleSentence(rects, viewRect.top, viewRect.bottom)
   }, [])
+
+  const toggleAutoScroll = useCallback(() => {
+    if (!autoScrolling) {
+      audiobook.stop()
+      setShowControls(false)
+    }
+    setAutoScrolling(value => !value)
+  }, [autoScrolling, audiobook.stop])
+
+  const toggleAudiobook = useCallback(() => {
+    if (!audiobook.playing) setAutoScrolling(false)
+    audiobook.toggle(audiobook.activeSentence ?? getVisibleSentenceIndex())
+  }, [audiobook.activeSentence, audiobook.playing, audiobook.toggle, getVisibleSentenceIndex])
+
+  const pauseAudiobook = useCallback(() => {
+    if (audiobook.playing && audiobook.activeSentence !== null) {
+      audiobook.toggle(audiobook.activeSentence)
+    }
+  }, [audiobook.activeSentence, audiobook.playing, audiobook.toggle])
+
+  const pauseConcealedPlayback = useCallback(() => {
+    pauseAutoScroll()
+    pauseAudiobook()
+  }, [pauseAutoScroll, pauseAudiobook])
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault()
@@ -120,6 +157,7 @@ function AppContent() {
 
     const files = Array.from(e.dataTransfer.files)
     if (files.length > 0) {
+      audiobook.stop()
       await importBook((files[0] as File & { path?: string }).path)
     }
   }
@@ -139,11 +177,13 @@ function AppContent() {
     // Chapter navigation (Cmd+ArrowRight / Cmd+ArrowLeft)
     if (e.metaKey && e.key === 'ArrowRight') {
       e.preventDefault()
+      audiobook.stop()
       nextChapter()
     }
 
     if (e.metaKey && e.key === 'ArrowLeft') {
       e.preventDefault()
+      audiobook.stop()
       prevChapter()
     }
 
@@ -162,9 +202,17 @@ function AppContent() {
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [toggleSettings, nextChapter, prevChapter, updateFontSize, currentTheme.fontSize, autoScrolling])
+  }, [
+    toggleSettings,
+    nextChapter,
+    prevChapter,
+    updateFontSize,
+    currentTheme.fontSize,
+    autoScrolling,
+    audiobook.stop
+  ])
 
-  useEffect(() => window.electronAPI.onWindowHidden(pauseAutoScroll), [pauseAutoScroll])
+  useEffect(() => window.electronAPI.onWindowHidden(pauseConcealedPlayback), [pauseConcealedPlayback])
   useEffect(() => window.electronAPI.onWindowReveal(revealContent), [revealContent])
   useEffect(() => {
     if (!settingsState.autoHideOnMouseLeave || settingsState.showSettings || controlOverlayOpen) {
@@ -208,6 +256,7 @@ function AppContent() {
             return
           }
           pauseAutoScroll()
+          pauseAudiobook()
           setAutoHidden(true)
           window.electronAPI.setWindowAutoHidden(true)
           autoHideTimeoutRef.current = null
@@ -219,13 +268,19 @@ function AppContent() {
       <ReadingView
         autoScrolling={autoScrolling}
         speed={settingsState.autoScrollSpeed}
+        activeSentence={audiobook.activeSentence}
         onPause={pauseAutoScroll}
         onManualScroll={() => setShowControls(false)}
+        onStopAudiobook={audiobook.stop}
       />
+      {audiobook.error && <div className="audiobook-error" role="status">{audiobook.error}</div>}
       <ControlBar
         visible={showControls}
         autoScrolling={autoScrolling}
+        audiobookPlaying={audiobook.playing}
         onToggleAutoScroll={toggleAutoScroll}
+        onToggleAudiobook={toggleAudiobook}
+        onStopAudiobook={audiobook.stop}
         onPause={pauseAutoScroll}
         onOverlayChange={setControlOverlayOpen}
       />

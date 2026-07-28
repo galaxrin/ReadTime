@@ -111,6 +111,11 @@
   overflow-wrap: break-word;
 }
 
+.spoken-sentence {
+  background: color-mix(in srgb, var(--accent-color) 24%, transparent);
+  border-radius: 4px;
+}
+
 [data-theme^="transparent"] .chapter-title,
 [data-theme^="transparent"] .reader-header {
   text-shadow: var(--text-shadow);

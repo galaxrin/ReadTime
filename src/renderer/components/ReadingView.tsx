@@ -1,8 +1,9 @@
 // src/renderer/components/ReadingView.tsx
-import React, { useRef, useEffect, useCallback } from 'react'
+import React, { useRef, useEffect, useCallback, useMemo } from 'react'
 import { useReading } from '../contexts/ReadingContext'
 import { ProgressManager } from '../utils/progressManager'
 import { nextScrollPosition, shouldAdvanceChapter } from '../utils/autoScroll'
+import { splitSentences } from '../utils/audiobook'
 import './ReadingView.css'
 
 const DEFAULT_LINE_HEIGHT = 24
@@ -16,11 +17,20 @@ function parseLineHeight(el: HTMLElement): number {
 interface ReadingViewProps {
   autoScrolling: boolean
   speed: number
+  activeSentence: number | null
   onPause: () => void
   onManualScroll: () => void
+  onStopAudiobook: () => void
 }
 
-export function ReadingView({ autoScrolling, speed, onPause, onManualScroll }: ReadingViewProps) {
+export function ReadingView({
+  autoScrolling,
+  speed,
+  activeSentence,
+  onPause,
+  onManualScroll,
+  onStopAudiobook
+}: ReadingViewProps) {
   const { state, setCurrentLine, nextChapter } = useReading()
   const contentRef = useRef<HTMLDivElement>(null)
   const progressManagerRef = useRef<ProgressManager | null>(null)
@@ -28,6 +38,8 @@ export function ReadingView({ autoScrolling, speed, onPause, onManualScroll }: R
   const chapterAdvanceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const { chapters, currentChapter, currentLine, filePath, activeBook, isLoading, error } = state
+  const chapter = chapters[currentChapter]
+  const sentences = useMemo(() => splitSentences(chapter?.content || ''), [chapter?.content])
 
   // Lazily initialize ProgressManager once
   const getProgressManager = useCallback(() => {
@@ -74,6 +86,18 @@ export function ReadingView({ autoScrolling, speed, onPause, onManualScroll }: R
     if (chapterAdvanceTimerRef.current) clearTimeout(chapterAdvanceTimerRef.current)
   }, [])
 
+  useEffect(() => {
+    const view = contentRef.current
+    if (activeSentence === null || !view) return
+    const element = view.querySelector<HTMLElement>(`[data-sentence="${activeSentence}"]`)
+    if (!element) return
+    const viewRect = view.getBoundingClientRect()
+    const sentenceRect = element.getBoundingClientRect()
+    if (sentenceRect.bottom <= viewRect.top || sentenceRect.top >= viewRect.bottom) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }
+  }, [activeSentence])
+
   // Scroll to saved line position when chapter changes
   useEffect(() => {
     if (contentRef.current && currentLine > 0) {
@@ -105,6 +129,7 @@ export function ReadingView({ autoScrolling, speed, onPause, onManualScroll }: R
     )) return
 
     element.scrollTop = 0
+    onStopAudiobook()
     nextChapter()
     chapterAdvanceTimerRef.current = setTimeout(() => {
       chapterAdvanceTimerRef.current = null
@@ -165,8 +190,6 @@ export function ReadingView({ autoScrolling, speed, onPause, onManualScroll }: R
     return <div className="no-file-message">章节索引无效</div>
   }
 
-  const chapter = chapters[currentChapter]
-
   return (
     <div
       className="reading-view"
@@ -185,7 +208,17 @@ export function ReadingView({ autoScrolling, speed, onPause, onManualScroll }: R
       </header>
       <article className="reader-copy">
         <h1 className="chapter-title">{chapter.title}</h1>
-        <div className="chapter-content">{chapter.content}</div>
+        <div className="chapter-content">
+          {sentences.map((sentence, index) => (
+            <span
+              key={index}
+              data-sentence={index}
+              className={index === activeSentence ? 'spoken-sentence' : undefined}
+            >
+              {sentence}
+            </span>
+          ))}
+        </div>
       </article>
     </div>
   )
