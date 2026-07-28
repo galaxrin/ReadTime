@@ -59,6 +59,22 @@ ReadTime 专为桌面阅读场景设计，让阅读窗口自然融入工作环�
   </tr>
 </table>
 
+## 下载与安装
+
+前往 [GitHub Releases](https://github.com/galaxrin/ReadTime/releases/latest) 下载对应版本：
+
+- Apple Silicon（M 系列芯片）：`ReadTime-1.0.0-arm64.dmg`
+- Intel：`ReadTime-1.0.0.dmg`
+
+将 `ReadTime.app` 拖入“应用程序”后打开。当前安装包尚未使用 Apple Developer ID 签名，macOS 可能提示“软件已损坏”或无法验证开发者。请先确认安装包来自本项目官方 Release，再尝试右键应用并选择“打开”；如果仍被拦截，可执行：
+
+```bash
+xattr -dr com.apple.quarantine /Applications/ReadTime.app
+open /Applications/ReadTime.app
+```
+
+请勿对来源不明的软件执行上述命令。
+
 ## 作者
 
 **脏咖喱 · [Galaxrin](https://github.com/galaxrin)**
