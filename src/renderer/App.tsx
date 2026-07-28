@@ -42,6 +42,30 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boole
   }
 }
 
+export function toggleAutoScrollPlayback(
+  autoScrolling: boolean,
+  stopAudiobook: () => void,
+  hideControls: () => void,
+  setAutoScrolling: (value: boolean) => void
+) {
+  if (!autoScrolling) {
+    stopAudiobook()
+    hideControls()
+  }
+  setAutoScrolling(!autoScrolling)
+}
+
+export function toggleAudiobookPlayback(
+  playing: boolean,
+  activeSentence: number | null,
+  getVisibleSentenceIndex: () => number,
+  pauseAutoScroll: () => void,
+  toggle: (sentence: number) => void
+) {
+  if (!playing) pauseAutoScroll()
+  toggle(activeSentence ?? getVisibleSentenceIndex())
+}
+
 function AppContent() {
   const { state: readingState, importBook, nextChapter, prevChapter } = useReading()
   const { state: settingsState, toggleSettings, updateFontSize } = useSettings()
@@ -123,17 +147,29 @@ function AppContent() {
   }, [])
 
   const toggleAutoScroll = useCallback(() => {
-    if (!autoScrolling) {
-      audiobook.stop()
-      setShowControls(false)
-    }
-    setAutoScrolling(value => !value)
+    toggleAutoScrollPlayback(
+      autoScrolling,
+      audiobook.stop,
+      () => setShowControls(false),
+      setAutoScrolling
+    )
   }, [autoScrolling, audiobook.stop])
 
   const toggleAudiobook = useCallback(() => {
-    if (!audiobook.playing) setAutoScrolling(false)
-    audiobook.toggle(audiobook.activeSentence ?? getVisibleSentenceIndex())
-  }, [audiobook.activeSentence, audiobook.playing, audiobook.toggle, getVisibleSentenceIndex])
+    toggleAudiobookPlayback(
+      audiobook.playing,
+      audiobook.activeSentence,
+      getVisibleSentenceIndex,
+      pauseAutoScroll,
+      audiobook.toggle
+    )
+  }, [
+    audiobook.activeSentence,
+    audiobook.playing,
+    audiobook.toggle,
+    getVisibleSentenceIndex,
+    pauseAutoScroll
+  ])
 
   const pauseAudiobook = useCallback(() => {
     if (audiobook.playing && audiobook.activeSentence !== null) {

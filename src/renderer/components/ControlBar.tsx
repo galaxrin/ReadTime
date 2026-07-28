@@ -15,6 +15,16 @@ interface ControlBarProps {
   onOverlayChange: (open: boolean) => void
 }
 
+export function removeBookWithPlaybackStop(
+  bookId: string,
+  activeBookId: string | undefined,
+  stopAudiobook: () => void,
+  removeBook: (id: string) => void
+) {
+  if (bookId === activeBookId) stopAudiobook()
+  removeBook(bookId)
+}
+
 export function ControlBar({
   visible,
   autoScrolling,
@@ -87,7 +97,9 @@ export function ControlBar({
                 <small>{book.format.toUpperCase()}</small>
               </button>
               <button className="bookshelf-remove" aria-label={`移除 ${book.title}`} onClick={() => {
-                if (window.confirm('从书架移除？原文件不会被删除。')) void removeBook(book.id)
+                if (window.confirm('从书架移除？原文件不会被删除。')) {
+                  removeBookWithPlaybackStop(book.id, activeBook?.id, onStopAudiobook, removeBook)
+                }
               }}>×</button>
             </div>
           ))}
