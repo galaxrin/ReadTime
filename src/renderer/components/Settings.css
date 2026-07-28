@@ -1,0 +1,255 @@
+.settings-backdrop {
+  position: fixed;
+  z-index: 40;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(7, 9, 11, .3);
+  backdrop-filter: blur(5px);
+  -webkit-app-region: no-drag;
+}
+
+.settings-panel {
+  position: relative;
+  width: min(360px, 100%);
+  max-height: calc(100vh - 32px);
+  padding: 24px;
+  overflow-y: auto;
+  color: var(--text-color);
+  background: var(--surface-background);
+  border-radius: 18px;
+  box-shadow: 0 26px 70px rgba(0, 0, 0, .28);
+  backdrop-filter: blur(28px) saturate(130%);
+  scrollbar-width: none;
+}
+.settings-panel::-webkit-scrollbar { display: none }
+
+.settings-title {
+  margin-bottom: 24px;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: .02em;
+}
+
+.settings-section { margin-bottom: 22px }
+.toggle-row { display:flex; align-items:center; justify-content:space-between; gap:16px; cursor:pointer }
+.toggle-row span { display:grid; gap:4px }
+.toggle-row strong { color:var(--text-color); font-size:12px }
+.toggle-row small { color:var(--muted-color); font-size:10px }
+.toggle-row input {
+  position: relative;
+  flex: 0 0 52px;
+  width: 52px;
+  height: 26px;
+  margin: 0;
+  appearance: none;
+  color: #fff;
+  background: #62686f;
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 160ms ease;
+}
+.toggle-row input::before {
+  content: "OFF";
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  transform: translateY(-50%);
+}
+.toggle-row input::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, .28);
+  transition: transform 160ms ease;
+}
+.toggle-row input:checked { background: var(--accent-color) }
+.toggle-row input:checked::before {
+  content: "ON";
+  right: auto;
+  left: 6px;
+}
+.toggle-row input:checked::after { transform: translateX(26px) }
+.toggle-row input:focus-visible {
+  outline: 2px solid var(--accent-color);
+  outline-offset: 3px;
+}
+.settings-label {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  color: var(--muted-color);
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: .06em;
+}
+
+.theme-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 24px;
+  margin-bottom: 10px;
+  color: var(--muted-color);
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.theme-section-header .settings-label { margin: 0 }
+.theme-back, .all-themes-button {
+  color: var(--muted-color);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+.theme-back { padding: 4px 0 }
+.theme-back:hover, .all-themes-button:hover { color: var(--text-color) }
+.theme-back:focus-visible, .all-themes-button:focus-visible, .theme-button:focus-visible {
+  outline: 2px solid var(--accent-color);
+  outline-offset: 2px;
+}
+.all-themes-button {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  margin-top: 10px;
+  padding: 10px 8px;
+  border-radius: 10px;
+}
+.all-themes-button:hover, .all-themes-button:focus-visible {
+  background: color-mix(in srgb, var(--text-color) 8%, transparent);
+}
+
+.theme-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.theme-buttons.all-themes {
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.theme-buttons.all-themes .theme-button { padding: 6px }
+.theme-buttons.all-themes .theme-swatch { height: 42px }
+.theme-buttons.all-themes .theme-name { font-size: 10px }
+
+.theme-button {
+  padding: 8px;
+  color: inherit;
+  background: color-mix(in srgb, var(--surface-background) 76%, transparent);
+  border: 0;
+  border-radius: 14px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 150ms ease, transform 150ms ease;
+}
+
+.theme-button:hover {
+  background: color-mix(in srgb, var(--text-color) 10%, var(--surface-background));
+  transform: translateY(-2px);
+}
+.theme-button.active {
+  color: var(--accent-color);
+  background: color-mix(in srgb, var(--accent-color) 18%, var(--surface-background));
+}
+.theme-button:focus-visible { background: color-mix(in srgb, var(--accent-color) 14%, var(--surface-background)) }
+
+.theme-swatch {
+  position: relative;
+  display: block;
+  height: 52px;
+  margin-bottom: 8px;
+  overflow: hidden;
+  border-radius: 9px;
+}
+
+.theme-swatch > span {
+  position: absolute;
+  bottom: 7px;
+  left: 10px;
+  font-family: Georgia, serif;
+  font-size: 17px;
+}
+
+.theme-name { display: block; padding: 0 2px 2px; font-size: 11px }
+
+.settings-slider {
+  width: 100%;
+  height: 3px;
+  appearance: none;
+  background: color-mix(in srgb, var(--muted-color) 28%, transparent);
+  border-radius: 99px;
+  outline: none;
+}
+
+.settings-slider::-webkit-slider-thumb {
+  width: 15px;
+  height: 15px;
+  appearance: none;
+  background: var(--accent-color);
+  border: 0;
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, .22);
+  cursor: pointer;
+}
+.settings-slider:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 6px color-mix(in srgb, var(--accent-color) 18%, transparent);
+}
+
+.close-button {
+  position: absolute;
+  top: 17px;
+  right: 17px;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  color: var(--muted-color);
+  background: transparent;
+  border: 0;
+  border-radius: 9px;
+  cursor: pointer;
+  font-size: 20px;
+}
+
+.close-button:hover, .close-button:focus-visible { outline:none; background:color-mix(in srgb,var(--text-color) 9%,transparent) }
+.settings-hint {
+  margin: 0;
+  padding: 11px 12px;
+  color: var(--muted-color);
+  background: color-mix(in srgb, var(--surface-background) 70%, transparent);
+  border-radius: 12px;
+  font-size: 10px;
+  line-height: 1.55;
+}
+.settings-signature {
+  margin: 12px 0 0;
+  color: var(--muted-color);
+  font-size: 10px;
+  text-align: center;
+  opacity: .65;
+}
+.shortcut-row { display:flex; gap:8px }
+.shortcut-input { min-width:0; flex:1; padding:9px 10px; color:var(--text-color); background:color-mix(in srgb,var(--surface-background) 65%,transparent); border:0; border-radius:10px; outline:none }
+.shortcut-input:focus { background:color-mix(in srgb,var(--accent-color) 14%,var(--surface-background)) }
+.shortcut-reset { padding:0 10px; color:var(--text-color); background:transparent; border:0; border-radius:10px; cursor:pointer }
+.shortcut-error { margin:7px 0 0; color:#d86f64; font-size:10px }
+.font-select { min-width:0; flex:1; padding:9px 10px; color:var(--text-color); background:var(--surface-background); border:0; border-radius:10px; outline:none }
+.font-select:focus { background:color-mix(in srgb,var(--accent-color) 14%,var(--surface-background)) }
+.font-import { padding:0 10px; color:var(--text-color); background:transparent; border:0; border-radius:10px; cursor:pointer }
+.shortcut-reset:hover, .shortcut-reset:focus-visible, .font-import:hover, .font-import:focus-visible { outline:none; background:color-mix(in srgb,var(--text-color) 10%,transparent) }
+.speed-options { display:grid; grid-template-columns:repeat(3,1fr); gap:8px }
+.speed-options button { padding:8px 0; color:var(--muted-color); background:transparent; border:0; border-radius:9px; cursor:pointer }
+.speed-options button:hover, .speed-options button:focus-visible { outline:none; background:color-mix(in srgb,var(--text-color) 9%,transparent) }
+.speed-options button.active { color:var(--accent-color); background:color-mix(in srgb,var(--accent-color) 16%,transparent) }

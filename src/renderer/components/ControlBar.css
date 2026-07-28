@@ -1,0 +1,131 @@
+.control-bar {
+  position: fixed;
+  z-index: 20;
+  right: 18px;
+  bottom: 16px;
+  left: 18px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 50px;
+  padding: 8px 10px;
+  color: var(--text-color);
+  background: var(--control-background);
+  border-radius: 17px;
+  backdrop-filter: blur(22px) saturate(125%);
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 180ms ease, transform 180ms ease;
+  pointer-events: none;
+  -webkit-app-region: no-drag;
+}
+
+.control-bar.visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.control-button {
+  display: grid;
+  flex: 0 0 34px;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  border-radius: 11px;
+  cursor: pointer;
+  font-size: 21px;
+  transition: background 150ms ease, transform 150ms ease;
+}
+
+.control-button:hover { background: color-mix(in srgb, var(--text-color) 11%, transparent) }
+.control-button:active { transform: scale(.94) }
+.control-button:disabled { opacity: .28; cursor: default }
+.control-button:focus-visible { outline: none; background: color-mix(in srgb, var(--accent-color) 18%, transparent) }
+.control-button.active { background: color-mix(in srgb, var(--text-color) 13%, transparent) }
+.auto-scroll-button { font-size: 15px }
+
+.control-icon {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+[data-theme^="transparent"] .control-bar {
+  background: var(--control-background);
+  backdrop-filter: none;
+}
+
+.toc-popover {
+  position: fixed;
+  z-index: 19;
+  bottom: 78px;
+  left: 18px;
+  width: min(310px, calc(100% - 36px));
+  max-height: min(360px, calc(100vh - 110px));
+  overflow: hidden;
+  color: var(--text-color);
+  background: var(--surface-background);
+  border-radius: 18px;
+  box-shadow: 0 20px 50px rgba(0,0,0,.3);
+  backdrop-filter: blur(24px);
+  -webkit-app-region: no-drag;
+}
+.toc-header { display:flex; justify-content:space-between; padding:15px 16px 11px; font-size:12px }
+.toc-header span { color:var(--muted-color); font-size:10px }
+.toc-list { max-height:300px; overflow-y:auto; padding:7px }
+.toc-item { display:grid; grid-template-columns:30px 1fr; width:100%; padding:9px; border:0; border-radius:10px; color:var(--muted-color); background:transparent; text-align:left; cursor:pointer }
+.toc-item:hover, .toc-item:focus-visible { outline:none; background:color-mix(in srgb,var(--text-color) 9%,transparent) }
+.toc-item.active { color:var(--text-color); background:color-mix(in srgb,var(--text-color) 9%,transparent) }
+.toc-item span { font-size:9px; color:var(--muted-color) }
+
+.bookshelf-import {
+  padding: 4px 8px;
+  color: var(--text-color);
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.bookshelf-import:hover, .bookshelf-import:focus-visible { outline:none; background:color-mix(in srgb,var(--text-color) 9%,transparent) }
+.bookshelf-empty { padding: 24px 12px; color: var(--muted-color); text-align: center; font-size: 12px }
+.bookshelf-item { display: grid; grid-template-columns: minmax(0, 1fr) 32px; align-items: center; border-radius: 10px }
+.bookshelf-item.active { background: color-mix(in srgb, var(--text-color) 9%, transparent) }
+.bookshelf-item > button { color: var(--muted-color); background: transparent; border: 0; cursor: pointer }
+.bookshelf-item > button:focus-visible { outline:none; background:color-mix(in srgb,var(--text-color) 9%,transparent) }
+.bookshelf-item > button:first-child { display: flex; min-width: 0; align-items: center; justify-content: space-between; gap: 8px; padding: 10px; text-align: left }
+.bookshelf-item span { overflow: hidden; color: var(--text-color); text-overflow: ellipsis; white-space: nowrap }
+.bookshelf-item small { flex: none; font-size: 9px }
+.bookshelf-remove { width: 28px; height: 28px; border-radius: 8px; font-size: 18px }
+.bookshelf-remove:hover, .bookshelf-remove:focus-visible { color:var(--text-color); background:color-mix(in srgb,var(--text-color) 9%,transparent) }
+
+.progress-bar {
+  flex: 1;
+  height: 3px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--muted-color) 25%, transparent);
+  border-radius: 99px;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--accent-color);
+  border-radius: inherit;
+  transition: width 280ms ease;
+}
+
+.progress-info {
+  min-width: 48px;
+  color: var(--muted-color);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
