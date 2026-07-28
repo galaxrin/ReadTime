@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   AudiobookController,
   AudiobookPlaybackState,
-  AudiobookUtterance,
   createAudiobookController,
   splitSentences
 } from '../utils/audiobook'
@@ -42,15 +41,15 @@ export function useAudiobook({
 
   if (!controller.current) {
     const speech = supported ? window.speechSynthesis : null
-    controller.current = createAudiobookController({
+    controller.current = createAudiobookController<SpeechSynthesisUtterance>({
       speech: speech && {
-        speak: utterance => speech.speak(utterance as unknown as SpeechSynthesisUtterance),
+        speak: utterance => speech.speak(utterance),
         cancel: () => speech.cancel(),
         pause: () => speech.pause(),
         resume: () => speech.resume()
       },
       createUtterance: supported
-        ? text => new SpeechSynthesisUtterance(text) as unknown as AudiobookUtterance
+        ? text => new SpeechSynthesisUtterance(text)
         : null,
       session,
       onState: setState

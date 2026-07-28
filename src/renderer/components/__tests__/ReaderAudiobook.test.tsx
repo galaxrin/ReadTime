@@ -2,6 +2,7 @@ import React from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { useReading } from '../../contexts/ReadingContext'
 import { useSettings } from '../../contexts/SettingsContext'
+import { defaultThemes } from '../../utils/themeManager'
 
 jest.mock('../../contexts/ReadingContext', () => ({
   useReading: jest.fn()
@@ -41,19 +42,39 @@ beforeEach(() => {
     setCurrentLine: jest.fn()
   })
   jest.mocked(useSettings).mockReturnValue({
-    toggleSettings: jest.fn()
-  } as unknown as ReturnType<typeof useSettings>)
+    state: {
+      currentTheme: defaultThemes[0],
+      themes: defaultThemes,
+      frequentThemes: defaultThemes.slice(0, 4),
+      showSettings: false,
+      autoScrollSpeed: 60,
+      audiobookRate: 1,
+      readingFont: 'serif',
+      customFonts: [],
+      autoHideOnMouseLeave: false
+    },
+    setTheme: jest.fn(),
+    updateFontSize: jest.fn(),
+    updateLineHeight: jest.fn(),
+    updateOpacity: jest.fn(),
+    toggleSettings: jest.fn(),
+    updateAutoScrollSpeed: jest.fn(),
+    updateAudiobookRate: jest.fn(),
+    updateReadingFont: jest.fn(),
+    importFont: jest.fn(),
+    updateAutoHideOnMouseLeave: jest.fn()
+  })
 })
 
 test('renders every sentence piece and highlights only the active sentence', () => {
-  const TestReadingView = ReadingView as unknown as React.ComponentType<Record<string, unknown>>
   const markup = renderToStaticMarkup(
-    <TestReadingView
+    <ReadingView
       autoScrolling={false}
       speed={60}
       activeSentence={2}
       onPause={jest.fn()}
       onManualScroll={jest.fn()}
+      onStopAudiobook={jest.fn()}
     />
   )
 
@@ -64,9 +85,8 @@ test('renders every sentence piece and highlights only the active sentence', () 
 })
 
 test('exposes an accessible audiobook toggle next to reader controls', () => {
-  const TestControlBar = ControlBar as unknown as React.ComponentType<Record<string, unknown>>
   const markup = renderToStaticMarkup(
-    <TestControlBar
+    <ControlBar
       visible
       autoScrolling={false}
       audiobookPlaying

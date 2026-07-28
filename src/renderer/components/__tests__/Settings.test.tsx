@@ -23,7 +23,7 @@ beforeAll(() => {
   })
 })
 
-test('exposes the selected theme through aria-pressed', () => {
+test('exposes selected theme and audiobook rate through aria-pressed', () => {
   jest.mocked(useSettings).mockReturnValue({
     state: {
       currentTheme: defaultThemes[0],
@@ -50,8 +50,10 @@ test('exposes the selected theme through aria-pressed', () => {
 
   const markup = renderToStaticMarkup(<Settings />)
 
-  expect(markup.match(/aria-pressed="true"/g)).toHaveLength(1)
-  expect(markup.match(/aria-pressed="false"/g)).toHaveLength(3)
+  expect(markup.match(/aria-pressed="true"/g)).toHaveLength(2)
+  expect(markup.match(/aria-pressed="false"/g)).toHaveLength(7)
+  expect(markup).toContain('<button class="active" aria-pressed="true">1×</button>')
+  expect(markup).toContain('<button class="" aria-pressed="false">2×</button>')
   expect(markup).toContain('type="checkbox"')
   expect(markup).toContain('听书语速')
   expect(markup).toContain('>1×</button>')

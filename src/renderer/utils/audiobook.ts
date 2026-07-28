@@ -1,5 +1,5 @@
 export function splitSentences(text: string): string[] {
-  return text.match(/[^。！？.!?\n]+[。！？.!?]+|[^\n。！？.!?]+(?=\n|$)|\n/g) || []
+  return text.match(/[^。！？.!?\n]*[。！？.!?]+|[^。！？.!?\n]+|\n/g) || []
 }
 
 export function firstVisibleSentence(
@@ -29,12 +29,12 @@ export interface AudiobookUtterance {
   text: string
   lang: string
   rate: number
-  onend: (() => void) | null
-  onerror: ((event: { error: string }) => void) | null
+  onend: ((event: SpeechSynthesisEvent) => void) | null
+  onerror: ((event: SpeechSynthesisErrorEvent) => void) | null
 }
 
-interface AudiobookSpeech {
-  speak: (utterance: AudiobookUtterance) => void
+interface AudiobookSpeech<Utterance extends AudiobookUtterance> {
+  speak: (utterance: Utterance) => void
   cancel: () => void
   pause: () => void
   resume: () => void
@@ -56,14 +56,16 @@ export interface AudiobookController {
   stop: () => void
 }
 
-export function createAudiobookController({
+export function createAudiobookController<
+  Utterance extends AudiobookUtterance = AudiobookUtterance
+>({
   speech,
   createUtterance,
   session,
   onState
 }: {
-  speech: AudiobookSpeech | null
-  createUtterance: ((text: string) => AudiobookUtterance) | null
+  speech: AudiobookSpeech<Utterance> | null
+  createUtterance: ((text: string) => Utterance) | null
   session: { current: number }
   onState?: (state: AudiobookPlaybackState) => void
 }): AudiobookController {
@@ -85,13 +87,16 @@ export function createAudiobookController({
   const cancel = () => {
     session.current += 1
     speech?.cancel()
+    if (paused) {
+      speech?.resume()
+      paused = false
+    }
   }
 
   const stop = () => {
     if (!supported) return
     cancel()
     pendingChapter = null
-    paused = false
     updateState({ playing: false, activeSentence: null, error: state.error })
   }
 
@@ -107,22 +112,35 @@ export function createAudiobookController({
 
   const speakAt = (sentence: number) => {
     if (!speech || !createUtterance) return
-    if (options && !options.sentences.length) {
-      finishChapter()
-      return
-    }
-    if (!options || !options.sentences[sentence]) {
+    if (!options) {
       stop()
       return
     }
+    if (!options.sentences.length) {
+      finishChapter()
+      return
+    }
+    if (sentence < 0 || sentence >= options.sentences.length) {
+      stop()
+      return
+    }
+    const playableSentence = options.sentences.findIndex((text, index) =>
+      index >= sentence && text.trim() !== ''
+    )
+    if (playableSentence < 0) {
+      finishChapter()
+      return
+    }
 
-    const utterance = createUtterance(options.sentences[sentence])
+    const utterance = createUtterance(options.sentences[playableSentence])
     const utteranceSession = session.current
     utterance.lang = 'zh-CN'
     utterance.rate = options.rate
     utterance.onend = () => {
       if (utteranceSession !== session.current) return
-      if (options && sentence + 1 < options.sentences.length) speakAt(sentence + 1)
+      if (options && playableSentence + 1 < options.sentences.length) {
+        speakAt(playableSentence + 1)
+      }
       else finishChapter()
     }
     utterance.onerror = event => {
@@ -133,17 +151,15 @@ export function createAudiobookController({
       ) return
       cancel()
       pendingChapter = null
-      paused = false
       updateState({ playing: false, activeSentence: null, error: '系统朗读失败' })
     }
-    updateState({ playing: true, activeSentence: sentence, error: null })
+    updateState({ playing: true, activeSentence: playableSentence, error: null })
     speech.speak(utterance)
   }
 
   const startAt = (sentence: number) => {
     if (!supported) return
     cancel()
-    paused = false
     speakAt(sentence)
   }
 
