@@ -48,6 +48,21 @@
 .control-button:focus-visible { outline: none; background: color-mix(in srgb, var(--accent-color) 18%, transparent) }
 .control-button.active { background: color-mix(in srgb, var(--text-color) 13%, transparent) }
 .auto-scroll-button { font-size: 15px }
+.audiobook-button { font-size: 15px }
+
+.audiobook-error {
+  position: fixed;
+  z-index: 21;
+  right: 18px;
+  bottom: 78px;
+  max-width: calc(100% - 36px);
+  padding: 7px 10px;
+  color: var(--text-color);
+  background: var(--control-background);
+  border-radius: 9px;
+  font-size: 11px;
+  backdrop-filter: blur(22px) saturate(125%);
+}
 
 .control-icon {
   width: 18px;

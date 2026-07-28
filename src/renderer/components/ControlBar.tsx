@@ -7,12 +7,34 @@ import './ControlBar.css'
 interface ControlBarProps {
   visible: boolean
   autoScrolling: boolean
+  audiobookPlaying: boolean
   onToggleAutoScroll: () => void
+  onToggleAudiobook: () => void
+  onStopAudiobook: () => void
   onPause: () => void
   onOverlayChange: (open: boolean) => void
 }
 
-export function ControlBar({ visible, autoScrolling, onToggleAutoScroll, onPause, onOverlayChange }: ControlBarProps) {
+export function removeBookWithPlaybackStop(
+  bookId: string,
+  activeBookId: string | undefined,
+  stopAudiobook: () => void,
+  removeBook: (id: string) => void
+) {
+  if (bookId === activeBookId) stopAudiobook()
+  removeBook(bookId)
+}
+
+export function ControlBar({
+  visible,
+  autoScrolling,
+  audiobookPlaying,
+  onToggleAutoScroll,
+  onToggleAudiobook,
+  onStopAudiobook,
+  onPause,
+  onOverlayChange
+}: ControlBarProps) {
   const { state, importBook, openBook, removeBook, nextChapter, prevChapter, setCurrentChapter } = useReading()
   const { toggleSettings } = useSettings()
   const { books, activeBook, chapters, currentChapter, filePath } = state
@@ -40,6 +62,7 @@ export function ControlBar({ visible, autoScrolling, onToggleAutoScroll, onPause
               ref={index === currentChapter ? currentItemRef : undefined}
               className={`toc-item ${index === currentChapter ? 'active' : ''}`}
               onClick={() => {
+                onStopAudiobook()
                 setCurrentChapter(index)
                 setShowToc(false)
                 onPause()
@@ -55,13 +78,17 @@ export function ControlBar({ visible, autoScrolling, onToggleAutoScroll, onPause
       <div className="toc-popover bookshelf-popover">
         <div className="toc-header">
           <strong>书架</strong>
-          <button className="bookshelf-import" onClick={() => void importBook()}>＋ 导入书籍</button>
+          <button className="bookshelf-import" onClick={() => {
+            onStopAudiobook()
+            void importBook()
+          }}>＋ 导入书籍</button>
         </div>
         <div className="toc-list">
           {books.length === 0 && <div className="bookshelf-empty">还没有书籍</div>}
           {books.map(book => (
             <div className={`bookshelf-item ${book.id === activeBook?.id ? 'active' : ''}`} key={book.id}>
               <button onClick={() => {
+                onStopAudiobook()
                 void openBook(book.id)
                 setShowBookshelf(false)
                 onPause()
@@ -70,7 +97,9 @@ export function ControlBar({ visible, autoScrolling, onToggleAutoScroll, onPause
                 <small>{book.format.toUpperCase()}</small>
               </button>
               <button className="bookshelf-remove" aria-label={`移除 ${book.title}`} onClick={() => {
-                if (window.confirm('从书架移除？原文件不会被删除。')) void removeBook(book.id)
+                if (window.confirm('从书架移除？原文件不会被删除。')) {
+                  removeBookWithPlaybackStop(book.id, activeBook?.id, onStopAudiobook, removeBook)
+                }
               }}>×</button>
             </div>
           ))}
@@ -103,7 +132,10 @@ export function ControlBar({ visible, autoScrolling, onToggleAutoScroll, onPause
       </button>
       <button
         className="control-button"
-        onClick={prevChapter}
+        onClick={() => {
+          onStopAudiobook()
+          prevChapter()
+        }}
         disabled={!hasBook || currentChapter === 0}
         title="上一章"
         aria-label="上一章"
@@ -124,7 +156,10 @@ export function ControlBar({ visible, autoScrolling, onToggleAutoScroll, onPause
 
       <button
         className="control-button"
-        onClick={nextChapter}
+        onClick={() => {
+          onStopAudiobook()
+          nextChapter()
+        }}
         disabled={!hasBook || currentChapter === chapters.length - 1}
         title="下一章"
         aria-label="下一章"
@@ -135,6 +170,16 @@ export function ControlBar({ visible, autoScrolling, onToggleAutoScroll, onPause
       <button className={`control-button auto-scroll-button ${autoScrolling ? 'active' : ''}`} disabled={!hasBook} onClick={onToggleAutoScroll}
         title={autoScrolling ? '暂停自动滚动' : '开始自动滚动'} aria-label="自动滚动">
         {autoScrolling ? 'Ⅱ' : '▶'}
+      </button>
+
+      <button
+        className={`control-button audiobook-button ${audiobookPlaying ? 'active' : ''}`}
+        disabled={!hasBook}
+        onClick={onToggleAudiobook}
+        title={audiobookPlaying ? '暂停听书' : '开始听书'}
+        aria-label={audiobookPlaying ? '暂停听书' : '开始听书'}
+      >
+        {audiobookPlaying ? 'Ⅱ' : '🔊'}
       </button>
 
       <button

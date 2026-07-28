@@ -117,6 +117,7 @@ export function Settings() {
               key={rate}
               className={rate === audiobookRate ? 'active' : ''}
               onClick={() => updateAudiobookRate(rate)}
+              aria-pressed={rate === audiobookRate}
             >
               {rate}×
             </button>
