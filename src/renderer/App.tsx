@@ -202,7 +202,11 @@ function AppContent() {
           isResizingRef.current
         )) return
         cancelPendingAutoHide()
-        autoHideTimeoutRef.current = setTimeout(() => {
+        autoHideTimeoutRef.current = setTimeout(async () => {
+          if (await window.electronAPI.windowContainsCursor()) {
+            autoHideTimeoutRef.current = null
+            return
+          }
           pauseAutoScroll()
           setAutoHidden(true)
           window.electronAPI.setWindowAutoHidden(true)

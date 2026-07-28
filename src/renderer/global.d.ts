@@ -12,6 +12,7 @@ interface ElectronAPI {
   listFonts: () => Promise<Array<{ name: string; data: Uint8Array }>>
   importFont: () => Promise<string | null>
   updateBossKey: (shortcut: string) => Promise<boolean>
+  windowContainsCursor: () => Promise<boolean>
   setWindowAutoHidden: (hidden: boolean) => void
   onWindowReveal: (callback: () => void) => () => void
   onWindowHidden: (callback: () => void) => () => void

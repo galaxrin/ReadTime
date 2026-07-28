@@ -22,6 +22,7 @@ app.whenReady().then(() => {
   shortcutManager = new ShortcutManager(transparentWindow)
   shortcutManager.registerBossKey()
   ipcMain.handle('shortcut:update', (_event, shortcut: string) => shortcutManager.updateBossKey(shortcut))
+  ipcMain.handle('window:contains-cursor', () => transparentWindow.containsCursor())
   ipcMain.on('window:auto-hidden', (_event, hidden: boolean) => transparentWindow.setAutoHidden(hidden))
   ipcMain.handle('books:import', async (_event, sourcePath?: string) => {
     const selectedPath = sourcePath || (await dialog.showOpenDialog({

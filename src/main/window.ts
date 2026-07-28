@@ -79,6 +79,16 @@ export class TransparentWindow {
     return this.autoHidden
   }
 
+  containsCursor(padding = 8) {
+    if (!this.window) return false
+    const point = screen.getCursorScreenPoint()
+    const bounds = this.window.getBounds()
+    return point.x >= bounds.x - padding
+      && point.x <= bounds.x + bounds.width + padding
+      && point.y >= bounds.y - padding
+      && point.y <= bounds.y + bounds.height + padding
+  }
+
   reveal() {
     if (!this.window) return
     this.autoHidden = false
