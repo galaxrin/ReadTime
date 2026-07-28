@@ -129,3 +129,21 @@
   font-variant-numeric: tabular-nums;
   text-align: center;
 }
+
+@media (max-width: 379px) {
+  .control-bar {
+    right: 10px;
+    left: 10px;
+    gap: 4px;
+    padding-right: 6px;
+    padding-left: 6px;
+  }
+
+  .progress-bar { display: none }
+  .progress-info { min-width: 36px }
+
+  .toc-popover {
+    left: 10px;
+    width: calc(100% - 20px);
+  }
+}

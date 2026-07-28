@@ -20,3 +20,11 @@ export function shouldAdvanceChapter(
     && scrollTop + clientHeight >= scrollHeight - 1
     && currentChapter < chapterCount - 1
 }
+
+export function shouldReturnPreviousChapter(
+  deltaY: number,
+  scrollTop: number,
+  currentChapter: number
+) {
+  return deltaY < 0 && scrollTop <= 0 && currentChapter > 0
+}

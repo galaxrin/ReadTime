@@ -26,6 +26,7 @@ jest.mock('electron', () => ({
   }
 }))
 
+import { BrowserWindow } from 'electron'
 import { TransparentWindow } from '../window'
 
 beforeEach(() => jest.clearAllMocks())
@@ -34,6 +35,12 @@ test('protects window content from screen capture when created', () => {
   new TransparentWindow().create()
 
   expect(setContentProtection).toHaveBeenCalledWith(true)
+})
+
+test('keeps the window wide enough for compact controls', () => {
+  new TransparentWindow().create()
+
+  expect(BrowserWindow).toHaveBeenCalledWith(expect.objectContaining({ minWidth: 300 }))
 })
 
 test('reveals auto-hidden content and focuses its window', () => {
