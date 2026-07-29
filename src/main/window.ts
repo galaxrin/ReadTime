@@ -12,8 +12,9 @@ export class TransparentWindow {
 
     this.window = new BrowserWindow({
       width: 400,
-      minWidth: 300,
+      minWidth: 180,
       height: 600,
+      minHeight: 160,
       x: width - 420,
       y: 20,
       frame: false,

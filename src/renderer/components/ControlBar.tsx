@@ -7,31 +7,15 @@ import './ControlBar.css'
 interface ControlBarProps {
   visible: boolean
   autoScrolling: boolean
-  audiobookPlaying: boolean
   onToggleAutoScroll: () => void
-  onToggleAudiobook: () => void
-  onStopAudiobook: () => void
   onPause: () => void
   onOverlayChange: (open: boolean) => void
-}
-
-export function removeBookWithPlaybackStop(
-  bookId: string,
-  activeBookId: string | undefined,
-  stopAudiobook: () => void,
-  removeBook: (id: string) => void
-) {
-  if (bookId === activeBookId) stopAudiobook()
-  removeBook(bookId)
 }
 
 export function ControlBar({
   visible,
   autoScrolling,
-  audiobookPlaying,
   onToggleAutoScroll,
-  onToggleAudiobook,
-  onStopAudiobook,
   onPause,
   onOverlayChange
 }: ControlBarProps) {
@@ -62,7 +46,6 @@ export function ControlBar({
               ref={index === currentChapter ? currentItemRef : undefined}
               className={`toc-item ${index === currentChapter ? 'active' : ''}`}
               onClick={() => {
-                onStopAudiobook()
                 setCurrentChapter(index)
                 setShowToc(false)
                 onPause()
@@ -78,17 +61,13 @@ export function ControlBar({
       <div className="toc-popover bookshelf-popover">
         <div className="toc-header">
           <strong>书架</strong>
-          <button className="bookshelf-import" onClick={() => {
-            onStopAudiobook()
-            void importBook()
-          }}>＋ 导入书籍</button>
+          <button className="bookshelf-import" onClick={() => void importBook()}>＋ 导入书籍</button>
         </div>
         <div className="toc-list">
           {books.length === 0 && <div className="bookshelf-empty">还没有书籍</div>}
           {books.map(book => (
             <div className={`bookshelf-item ${book.id === activeBook?.id ? 'active' : ''}`} key={book.id}>
               <button onClick={() => {
-                onStopAudiobook()
                 void openBook(book.id)
                 setShowBookshelf(false)
                 onPause()
@@ -97,9 +76,7 @@ export function ControlBar({
                 <small>{book.format.toUpperCase()}</small>
               </button>
               <button className="bookshelf-remove" aria-label={`移除 ${book.title}`} onClick={() => {
-                if (window.confirm('从书架移除？原文件不会被删除。')) {
-                  removeBookWithPlaybackStop(book.id, activeBook?.id, onStopAudiobook, removeBook)
-                }
+                if (window.confirm('从书架移除？原文件不会被删除。')) void removeBook(book.id)
               }}>×</button>
             </div>
           ))}
@@ -107,7 +84,7 @@ export function ControlBar({
       </div>
     )}
     <div className={`control-bar ${visible || showToc || showBookshelf || !hasBook ? 'visible' : ''}`}>
-      <button className={`control-button ${showBookshelf ? 'active' : ''}`} onClick={() => {
+      <button className={`control-button wide-control-button ${showBookshelf ? 'active' : ''}`} onClick={() => {
         setShowBookshelf(value => !value)
         setShowToc(false)
         onPause()
@@ -118,7 +95,7 @@ export function ControlBar({
           <path d="M6 9h2M13.5 7h2" />
         </svg>
       </button>
-      <button className={`control-button ${showToc ? 'active' : ''}`} disabled={!hasBook} onClick={() => {
+      <button className={`control-button wide-control-button ${showToc ? 'active' : ''}`} disabled={!hasBook} onClick={() => {
         setShowToc(value => !value)
         setShowBookshelf(false)
         onPause()
@@ -131,11 +108,8 @@ export function ControlBar({
         </svg>
       </button>
       <button
-        className="control-button"
-        onClick={() => {
-          onStopAudiobook()
-          prevChapter()
-        }}
+        className="control-button wide-control-button"
+        onClick={prevChapter}
         disabled={!hasBook || currentChapter === 0}
         title="上一章"
         aria-label="上一章"
@@ -155,11 +129,8 @@ export function ControlBar({
       </span>
 
       <button
-        className="control-button"
-        onClick={() => {
-          onStopAudiobook()
-          nextChapter()
-        }}
+        className="control-button wide-control-button"
+        onClick={nextChapter}
         disabled={!hasBook || currentChapter === chapters.length - 1}
         title="下一章"
         aria-label="下一章"
@@ -173,17 +144,7 @@ export function ControlBar({
       </button>
 
       <button
-        className={`control-button audiobook-button ${audiobookPlaying ? 'active' : ''}`}
-        disabled={!hasBook}
-        onClick={onToggleAudiobook}
-        title={audiobookPlaying ? '暂停听书' : '开始听书'}
-        aria-label={audiobookPlaying ? '暂停听书' : '开始听书'}
-      >
-        {audiobookPlaying ? 'Ⅱ' : '🔊'}
-      </button>
-
-      <button
-        className="control-button"
+        className="control-button wide-control-button"
         onClick={toggleSettings}
         title="阅读设置"
         aria-label="阅读设置"

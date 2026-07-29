@@ -9,7 +9,6 @@ interface SettingsState {
   frequentThemes: Theme[]
   showSettings: boolean
   autoScrollSpeed: number
-  audiobookRate: number
   readingFont: string
   customFonts: string[]
   autoHideOnMouseLeave: boolean
@@ -23,7 +22,6 @@ interface SettingsContextType {
   updateOpacity: (opacity: number) => void
   toggleSettings: () => void
   updateAutoScrollSpeed: (speed: number) => void
-  updateAudiobookRate: (rate: number) => void
   updateReadingFont: (font: string) => void
   importFont: () => Promise<void>
   updateAutoHideOnMouseLeave: (enabled: boolean) => void
@@ -35,12 +33,10 @@ export const AUTO_SCROLL_SPEEDS = [
   { label: '中速', value: 60 },
   { label: '高速', value: 100 }
 ] as const
-export const AUDIOBOOK_RATES = [0.75, 1, 1.25, 1.5, 2] as const
 
 export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const [themeManager] = useState(() => new ThemeManager())
   const savedSpeed = Number(localStorage.getItem('readtime-auto-scroll-speed')) || 55
-  const savedAudiobookRate = Number(localStorage.getItem('readtime-audiobook-rate'))
   const [state, setState] = useState<SettingsState>({
     currentTheme: themeManager.getTheme(),
     themes: defaultThemes,
@@ -49,7 +45,6 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     autoScrollSpeed: AUTO_SCROLL_SPEEDS.reduce<number>((closest, speed) =>
       Math.abs(speed.value - savedSpeed) < Math.abs(closest - savedSpeed) ? speed.value : closest
     , AUTO_SCROLL_SPEEDS[1].value),
-    audiobookRate: AUDIOBOOK_RATES.some(rate => rate === savedAudiobookRate) ? savedAudiobookRate : 1,
     readingFont: localStorage.getItem('readtime-reading-font') || 'Georgia, "Songti SC", "STSong", serif',
     customFonts: [],
     autoHideOnMouseLeave: loadAutoHide()
@@ -103,12 +98,6 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     setState(prev => ({ ...prev, autoScrollSpeed: speed }))
   }, [])
 
-  const updateAudiobookRate = useCallback((rate: number) => {
-    if (!AUDIOBOOK_RATES.some(value => value === rate)) return
-    localStorage.setItem('readtime-audiobook-rate', String(rate))
-    setState(prev => ({ ...prev, audiobookRate: rate }))
-  }, [])
-
   const updateReadingFont = useCallback((font: string) => {
     localStorage.setItem('readtime-reading-font', font)
     document.documentElement.style.setProperty('--reading-font', font)
@@ -137,7 +126,6 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       updateOpacity,
       toggleSettings,
       updateAutoScrollSpeed,
-      updateAudiobookRate,
       updateReadingFont,
       importFont,
       updateAutoHideOnMouseLeave

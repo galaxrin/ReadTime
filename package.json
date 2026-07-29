@@ -1,6 +1,6 @@
 {
   "name": "readtime",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Discreet reading app for Mac",
   "main": "dist/main/main.js",
   "scripts": {

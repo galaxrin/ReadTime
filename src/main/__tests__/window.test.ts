@@ -37,10 +37,13 @@ test('protects window content from screen capture when created', () => {
   expect(setContentProtection).toHaveBeenCalledWith(true)
 })
 
-test('keeps the window wide enough for compact controls', () => {
+test('keeps the compact window usable', () => {
   new TransparentWindow().create()
 
-  expect(BrowserWindow).toHaveBeenCalledWith(expect.objectContaining({ minWidth: 300 }))
+  expect(BrowserWindow).toHaveBeenCalledWith(expect.objectContaining({
+    minWidth: 180,
+    minHeight: 160
+  }))
 })
 
 test('reveals auto-hidden content and focuses its window', () => {
