@@ -1,5 +1,5 @@
 // src/renderer/contexts/SettingsContext.tsx
-import React, { createContext, useContext, useState, useCallback, useEffect } from 'react'
+import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react'
 import { Theme, ThemeManager, defaultThemes } from '../utils/themeManager'
 import { loadAutoHide, saveAutoHide } from '../utils/autoHideSetting'
 
@@ -22,7 +22,7 @@ interface SettingsContextType {
   updateOpacity: (opacity: number) => void
   toggleSettings: () => void
   updateAutoScrollSpeed: (speed: number) => void
-  updateReadingFont: (font: string) => void
+  updateReadingFont: (font: string) => Promise<void>
   importFont: () => Promise<void>
   updateAutoHideOnMouseLeave: (enabled: boolean) => void
 }
@@ -36,7 +36,9 @@ export const AUTO_SCROLL_SPEEDS = [
 
 export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const [themeManager] = useState(() => new ThemeManager())
+  const loadedFonts = useRef(new Set<string>())
   const savedSpeed = Number(localStorage.getItem('readtime-auto-scroll-speed')) || 55
+  const savedFont = localStorage.getItem('readtime-reading-font') || 'Georgia, "Songti SC", "STSong", serif'
   const [state, setState] = useState<SettingsState>({
     currentTheme: themeManager.getTheme(),
     themes: defaultThemes,
@@ -45,24 +47,27 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     autoScrollSpeed: AUTO_SCROLL_SPEEDS.reduce<number>((closest, speed) =>
       Math.abs(speed.value - savedSpeed) < Math.abs(closest - savedSpeed) ? speed.value : closest
     , AUTO_SCROLL_SPEEDS[1].value),
-    readingFont: localStorage.getItem('readtime-reading-font') || 'Georgia, "Songti SC", "STSong", serif',
+    readingFont: savedFont,
     customFonts: [],
     autoHideOnMouseLeave: loadAutoHide()
   })
 
-  const loadCustomFonts = useCallback(async () => {
-    const fonts = await window.electronAPI.listFonts()
-    await Promise.all(fonts.map(async ({ name, data }) => {
-      const face = new FontFace(`ReadTime Custom ${name}`, data.buffer as ArrayBuffer)
-      await face.load()
-      document.fonts.add(face)
-    }))
-    setState(prev => ({ ...prev, customFonts: fonts.map(font => font.name) }))
+  const loadFont = useCallback(async (name: string) => {
+    if (loadedFonts.current.has(name)) return
+    const data = await window.electronAPI.readFont(name)
+    const face = new FontFace(`ReadTime Custom ${name}`, data.buffer as ArrayBuffer)
+    await face.load()
+    document.fonts.add(face)
+    loadedFonts.current.add(name)
   }, [])
 
   useEffect(() => {
-    void loadCustomFonts()
-  }, [loadCustomFonts])
+    void window.electronAPI.listFonts().then(async fonts => {
+      setState(prev => ({ ...prev, customFonts: fonts }))
+      const selected = /^"ReadTime Custom (.+)"$/.exec(savedFont)?.[1]
+      if (selected && fonts.includes(selected)) await loadFont(selected)
+    })
+  }, [loadFont, savedFont])
 
   const setTheme = useCallback((theme: Theme) => {
     themeManager.setTheme(theme)
@@ -98,15 +103,21 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     setState(prev => ({ ...prev, autoScrollSpeed: speed }))
   }, [])
 
-  const updateReadingFont = useCallback((font: string) => {
+  const updateReadingFont = useCallback(async (font: string) => {
+    const selected = /^"ReadTime Custom (.+)"$/.exec(font)?.[1]
+    if (selected) await loadFont(selected)
     localStorage.setItem('readtime-reading-font', font)
     document.documentElement.style.setProperty('--reading-font', font)
     setState(prev => ({ ...prev, readingFont: font }))
-  }, [])
+  }, [loadFont])
 
   const importFont = useCallback(async () => {
-    if (await window.electronAPI.importFont()) await loadCustomFonts()
-  }, [loadCustomFonts])
+    const name = await window.electronAPI.importFont()
+    if (!name) return
+    loadedFonts.current.delete(name)
+    await loadFont(name)
+    setState(prev => ({ ...prev, customFonts: [...new Set([...prev.customFonts, name])] }))
+  }, [loadFont])
 
   const updateAutoHideOnMouseLeave = useCallback((enabled: boolean) => {
     saveAutoHide(enabled)

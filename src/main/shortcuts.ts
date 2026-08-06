@@ -16,7 +16,6 @@ export class ShortcutManager {
 
     if (success) {
       this.currentShortcut = shortcut
-      console.log(`Boss key registered: ${shortcut}`)
     } else {
       console.error(`Failed to register boss key: ${shortcut}`)
     }

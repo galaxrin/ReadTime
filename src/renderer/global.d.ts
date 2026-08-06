@@ -9,7 +9,8 @@ interface ElectronAPI {
   readBook: (id: string) => Promise<StoredBookData>
   touchBook: (id: string) => Promise<void>
   removeBook: (id: string) => Promise<void>
-  listFonts: () => Promise<Array<{ name: string; data: Uint8Array }>>
+  listFonts: () => Promise<string[]>
+  readFont: (name: string) => Promise<Uint8Array>
   importFont: () => Promise<string | null>
   updateBossKey: (shortcut: string) => Promise<boolean>
   windowContainsCursor: () => Promise<boolean>

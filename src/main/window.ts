@@ -33,7 +33,6 @@ export class TransparentWindow {
     this.window.setContentProtection(true)
 
     const indexPath = path.join(__dirname, '../renderer/index.html')
-    console.log('Loading:', indexPath)
     this.window.loadFile(indexPath)
 
     this.window.on('close', (event) => {

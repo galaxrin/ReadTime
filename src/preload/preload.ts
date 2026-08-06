@@ -7,6 +7,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   touchBook: (id: string) => ipcRenderer.invoke('books:touch', id),
   removeBook: (id: string) => ipcRenderer.invoke('books:remove', id),
   listFonts: () => ipcRenderer.invoke('fonts:list'),
+  readFont: (name: string) => ipcRenderer.invoke('fonts:read', name),
   importFont: () => ipcRenderer.invoke('fonts:import'),
   updateBossKey: (shortcut: string) => ipcRenderer.invoke('shortcut:update', shortcut),
   windowContainsCursor: () => ipcRenderer.invoke('window:contains-cursor'),

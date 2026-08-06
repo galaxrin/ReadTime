@@ -7,7 +7,16 @@
     "target": [
       {
         "target": "dmg",
-        "arch": ["x64", "arm64"]
+        "arch": ["arm64"]
+      }
+    ]
+  },
+  "win": {
+    "icon": "assets/readtime-logo.png",
+    "target": [
+      {
+        "target": "nsis",
+        "arch": ["x64"]
       }
     ]
   },

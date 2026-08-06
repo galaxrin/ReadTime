@@ -5,7 +5,7 @@
 <h1 align="center">ReadTime</h1>
 
 <p align="center">
-  一款低打扰、可快速隐藏的 macOS 桌面阅读工具。
+  一款低打扰、可快速隐藏的 macOS 与 Windows 桌面阅读工具。
 </p>
 
 <p align="center">
@@ -90,11 +90,11 @@
 前往 [GitHub Releases](https://github.com/galaxrin/ReadTime/releases/latest) 下载对应版本：
 
 - Apple Silicon（M 系列芯片）：`ReadTime-1.0.1-arm64.dmg`
-- Intel：`ReadTime-1.0.1.dmg`
+- Windows 64 位：`ReadTime Setup 1.0.1.exe`
 
-将 `ReadTime.app` 拖入“应用程序”后打开。
+macOS 将 `ReadTime.app` 拖入“应用程序”后打开；Windows 运行安装程序并按提示安装。
 
-当前安装包未使用 Apple Developer ID 签名。请先确认安装包来自本项目官方 Release，再右键应用并选择“打开”。如果仍被 macOS 拦截，可执行：
+当前安装包尚未签名。请先确认安装包来自本项目官方 Release。macOS 首次使用请右键应用并选择“打开”；如果仍被系统拦截，可执行：
 
 ```bash
 xattr -dr com.apple.quarantine /Applications/ReadTime.app
