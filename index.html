@@ -46,22 +46,6 @@
 </head>
 <body>
   <div id="root"></div>
-  <script>
-    // Debug: Check if root element exists
-    console.log('Root element:', document.getElementById('root'));
-
-    // Global error handler
-    window.onerror = function(msg, url, line, col, error) {
-      console.error('Global error:', msg, url, line, col, error);
-      document.getElementById('root').innerHTML = '<div style="color:red;padding:20px;">Error: ' + msg + '</div>';
-      return true;
-    };
-
-    window.addEventListener('unhandledrejection', function(event) {
-      console.error('Unhandled rejection:', event.reason);
-      document.getElementById('root').innerHTML = '<div style="color:red;padding:20px;">Unhandled rejection: ' + event.reason + '</div>';
-    });
-  </script>
   <script type="module" src="./src/renderer/main.tsx"></script>
 </body>
 </html>

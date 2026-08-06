@@ -16,6 +16,18 @@ export interface StoredBookData {
   data: Uint8Array
 }
 
+function isBookRecord(value: unknown, booksDir: string): value is BookRecord {
+  if (!value || typeof value !== 'object') return false
+  const book = value as Partial<BookRecord>
+  return typeof book.id === 'string'
+    && typeof book.title === 'string'
+    && (book.format === 'txt' || book.format === 'epub')
+    && typeof book.storedPath === 'string'
+    && path.dirname(path.resolve(book.storedPath)) === path.resolve(booksDir)
+    && typeof book.addedAt === 'number'
+    && typeof book.lastReadAt === 'number'
+}
+
 export class BookStore {
   private readonly booksDir: string
   private readonly metadataPath: string
@@ -27,8 +39,11 @@ export class BookStore {
 
   private async load(): Promise<BookRecord[]> {
     try {
-      const books = JSON.parse(await readFile(this.metadataPath, 'utf8'))
-      return Array.isArray(books) ? books : []
+      const books: unknown = JSON.parse(await readFile(this.metadataPath, 'utf8'))
+      if (!Array.isArray(books) || !books.every(book => isBookRecord(book, this.booksDir))) {
+        throw new Error('Invalid book metadata')
+      }
+      return books
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code === 'ENOENT') return []
       throw new Error('书架数据损坏，已保留原文件')

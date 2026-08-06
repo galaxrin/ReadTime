@@ -1,5 +1,3 @@
-import ePub from 'epubjs'
-
 export interface Chapter {
   title: string
   content: string
@@ -91,6 +89,7 @@ export async function parseEpubFile(file: File): Promise<Chapter[]> {
     reader.onload = async (e) => {
       let book: any = null
       try {
+        const { default: ePub } = await import('epubjs')
         book = ePub(e.target?.result as ArrayBuffer)
         await book.ready
         const navigation = await book.loaded.navigation

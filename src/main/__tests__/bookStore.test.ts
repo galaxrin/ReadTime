@@ -47,4 +47,26 @@ describe('BookStore', () => {
       .rejects.toThrow('书架数据损坏')
     await expect(readFile(metadataPath, 'utf8')).resolves.toBe('{broken')
   })
+
+  test('rejects stored paths outside the managed books directory', async () => {
+    const root = await mkdtemp(path.join(os.tmpdir(), 'readtime-books-'))
+    const userData = path.join(root, 'userdata')
+    const booksDir = path.join(userData, 'books')
+    const metadataPath = path.join(booksDir, 'books.json')
+    const outsidePath = path.join(root, 'outside.txt')
+    await mkdir(booksDir, { recursive: true })
+    await writeFile(outsidePath, 'keep me')
+    await writeFile(metadataPath, JSON.stringify([{
+      id: 'unsafe',
+      title: 'outside.txt',
+      format: 'txt',
+      storedPath: outsidePath,
+      addedAt: 1,
+      lastReadAt: 1
+    }]))
+
+    await expect(new BookStore(userData).removeBook('unsafe'))
+      .rejects.toThrow('书架数据损坏')
+    await expect(readFile(outsidePath, 'utf8')).resolves.toBe('keep me')
+  })
 })

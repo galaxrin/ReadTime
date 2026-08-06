@@ -112,7 +112,7 @@ export function Settings() {
       <div className="settings-section">
         <label className="settings-label"><span>阅读字体</span><span>支持 OTF / TTF / WOFF</span></label>
         <div className="shortcut-row">
-          <select className="font-select" value={readingFont} onChange={event => updateReadingFont(event.target.value)}>
+          <select className="font-select" value={readingFont} onChange={event => void updateReadingFont(event.target.value)}>
             <option value={'Georgia, "Songti SC", "STSong", serif'}>系统宋体</option>
             <option value={'-apple-system, "PingFang SC", sans-serif'}>苹方</option>
             <option value={'"ReadTime ZCOOL XiaoWei", serif'}>站酷小薇体</option>
