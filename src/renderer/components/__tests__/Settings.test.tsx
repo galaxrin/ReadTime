@@ -9,6 +9,7 @@ jest.mock('../../contexts/SettingsContext', () => ({
     { label: '中速', value: 60 },
     { label: '高速', value: 100 }
   ],
+  FONT_SIZE_RANGE: { min: 12, max: 24 },
   useSettings: jest.fn()
 }))
 jest.mock('../Settings.css', () => ({}))
@@ -32,7 +33,8 @@ test('exposes the selected theme through aria-pressed', () => {
       autoScrollSpeed: 60,
       readingFont: 'serif',
       customFonts: [],
-      autoHideOnMouseLeave: false
+      autoHideOnMouseLeave: false,
+      hideBookTitle: false,
     },
     setTheme: jest.fn(),
     updateFontSize: jest.fn(),
@@ -42,7 +44,8 @@ test('exposes the selected theme through aria-pressed', () => {
     updateAutoScrollSpeed: jest.fn(),
     updateReadingFont: jest.fn(),
     importFont: jest.fn(),
-    updateAutoHideOnMouseLeave: jest.fn()
+    updateAutoHideOnMouseLeave: jest.fn(),
+    updateHideBookTitle: jest.fn()
   })
 
   const markup = renderToStaticMarkup(<Settings />)

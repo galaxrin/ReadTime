@@ -45,11 +45,23 @@ describe('ProgressManager', () => {
     expect(manager.loadProgress('missing.txt')).toBeNull()
   })
 
-  test('returns the last read file', () => {
+  test('lists every saved progress record', () => {
     manager.saveProgress('book-1.txt', 1, 10)
     manager.saveProgress('book-2.txt', 2, 20)
 
-    expect(manager.getLastReadFile()).toBe('book-2.txt')
+    expect(manager.getAllProgress()).toHaveLength(2)
+  })
+
+  test('a second manager sees writes made by another instance', () => {
+    const first = new ProgressManager(storage)
+    first.saveProgress('shared.txt', 3, 30)
+
+    const second = new ProgressManager(storage)
+    expect(second.loadProgress('shared.txt')).toMatchObject({ chapter: 3, line: 30 })
+
+    // 第二个实例的写入不能被第一个实例的旧快照覆盖
+    second.saveProgress('shared.txt', 5, 50)
+    expect(first.loadProgress('shared.txt')).toMatchObject({ chapter: 5, line: 50 })
   })
 
   test('ignores corrupt saved progress', () => {

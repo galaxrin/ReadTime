@@ -1,0 +1,11 @@
+@font-face {
+  font-family: "ReadTime Ma Shan Zheng";
+  src: url("../../assets/fonts/MaShanZheng-Regular.ttf") format("truetype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "ReadTime ZCOOL XiaoWei";
+  src: url("../../assets/fonts/ZCOOLXiaoWei-Regular.ttf") format("truetype");
+  font-display: swap;
+}

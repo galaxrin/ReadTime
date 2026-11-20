@@ -7,62 +7,43 @@ export interface Progress {
 
 const STORAGE_KEY = 'readtime-progress'
 
+type ProgressMap = Record<string, Progress>
+
 export class ProgressManager {
-  private progress = new Map<string, Progress>()
+  constructor(private storage: Storage | null = typeof localStorage === 'undefined' ? null : localStorage) {}
 
-  constructor(private storage: Storage = localStorage) {
-    this.load()
-  }
-
-  private load() {
+  // 每次读写存储，多个实例（阅读视图 / 上下文）看到的是同一份数据
+  private read(): ProgressMap {
     try {
-      const data = JSON.parse(this.storage.getItem(STORAGE_KEY) || '{}')
-      if (data && typeof data === 'object' && !Array.isArray(data)) {
-        this.progress = new Map(Object.entries(data) as [string, Progress][])
-      }
+      const data = JSON.parse(this.storage?.getItem(STORAGE_KEY) || '{}')
+      if (data && typeof data === 'object' && !Array.isArray(data)) return data as ProgressMap
     } catch {
-      this.progress.clear()
+      // 数据损坏按空处理
     }
+    return {}
   }
 
-  private save() {
-    this.storage.setItem(STORAGE_KEY, JSON.stringify(Object.fromEntries(this.progress)))
+  private write(data: ProgressMap) {
+    this.storage?.setItem(STORAGE_KEY, JSON.stringify(data))
   }
 
   saveProgress(filePath: string, chapter: number, line: number) {
-    this.progress.set(filePath, {
-      filePath,
-      chapter,
-      line,
-      timestamp: Date.now()
-    })
-    this.save()
+    const data = this.read()
+    data[filePath] = { filePath, chapter, line, timestamp: Date.now() }
+    this.write(data)
   }
 
   loadProgress(filePath: string): Progress | null {
-    return this.progress.get(filePath) || null
+    return this.read()[filePath] || null
   }
 
   removeProgress(filePath: string) {
-    this.progress.delete(filePath)
-    this.save()
-  }
-
-  getLastReadFile(): string | null {
-    let lastFile: string | null = null
-    let lastTimestamp = 0
-
-    this.progress.forEach((progress, filePath) => {
-      if (progress.timestamp >= lastTimestamp) {
-        lastTimestamp = progress.timestamp
-        lastFile = filePath
-      }
-    })
-
-    return lastFile
+    const data = this.read()
+    delete data[filePath]
+    this.write(data)
   }
 
   getAllProgress(): Progress[] {
-    return Array.from(this.progress.values())
+    return Object.values(this.read())
   }
 }

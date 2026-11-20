@@ -5,3 +5,6 @@ release/
 *.log
 .worktrees/
 .superpowers/
+src-tauri/target/
+src-tauri/gen/
+coverage/

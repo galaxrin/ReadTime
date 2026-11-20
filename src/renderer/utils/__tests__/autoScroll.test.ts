@@ -27,3 +27,5 @@ test('returns only when scrolling up at the top with a previous chapter', () => 
   expect(shouldReturnPreviousChapter(20, 0, 1)).toBe(false)
   expect(shouldReturnPreviousChapter(-20, 0, 0)).toBe(false)
 })
+
+

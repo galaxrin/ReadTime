@@ -1,3 +1,6 @@
+/**
+ * @jest-environment node
+ */
 import { defaultThemes, ThemeManager } from '../themeManager'
 
 const values = new Map<string, string>()
@@ -116,4 +119,56 @@ test('restoring a saved theme does not record a selection', () => {
 
   expect(manager.getTheme().id).toBe('blue-mist')
   expect(values.get('readtime-theme-usage')).toBeUndefined()
+})
+
+test('切换主题不会把字号/行距/透明度打回主题默认值', () => {
+  values.clear()
+  styles.clear()
+  ;(global as unknown as { localStorage: Storage }).localStorage.setItem('readtime-typography', JSON.stringify({
+    fontSize: 21,
+    lineHeight: 2.2,
+    opacity: 0.7
+  }))
+
+  const manager = new ThemeManager()
+  manager.setTheme(defaultThemes.find(theme => theme.id === 'night') as never)
+
+  const theme = manager.getTheme()
+  expect(theme.id).toBe('night')
+  expect(theme.fontSize).toBe(21)
+  expect(theme.lineHeight).toBe(2.2)
+  expect(theme.opacity).toBeCloseTo(0.7)
+  // 配色确实换成了目标主题
+  expect(theme.textColor).toBe(defaultThemes.find(item => item.id === 'night')!.textColor)
+})
+
+test('字号写入独立存储，重启后仍是用户值', () => {
+  values.clear()
+  values.set('readtime-typography', JSON.stringify({ fontSize: 17, lineHeight: 1.9, opacity: 1 }))
+  const manager = new ThemeManager()
+  manager.updateFontSize(23)
+
+  expect(JSON.parse(values.get('readtime-typography') || '{}').fontSize).toBe(23)
+
+  const restored = new ThemeManager()
+  expect(restored.getTheme().fontSize).toBe(23)
+})
+
+test('构造主题管理器不会写盘（StrictMode 会构造两次）', () => {
+  values.clear()
+  styles.clear()
+  const writes: string[] = []
+  Object.defineProperty(global, 'localStorage', {
+    configurable: true,
+    value: {
+      getItem: (key: string) => values.get(key) ?? null,
+      setItem: (key: string, value: string) => {
+        writes.push(key)
+        values.set(key, value)
+      }
+    }
+  })
+
+  new ThemeManager()
+  expect(writes.filter(key => key === 'readtime-typography')).toHaveLength(0)
 })

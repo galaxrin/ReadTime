@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react'
 import { Theme, ThemeManager, defaultThemes } from '../utils/themeManager'
 import { loadAutoHide, saveAutoHide } from '../utils/autoHideSetting'
+import { acquireWindowSpace, dropWindowSpaceRestore, isResizeFromUs, releaseWindowSpace } from '../utils/windowSpace'
 
 interface SettingsState {
   currentTheme: Theme
@@ -12,6 +13,7 @@ interface SettingsState {
   readingFont: string
   customFonts: string[]
   autoHideOnMouseLeave: boolean
+  hideBookTitle: boolean
 }
 
 interface SettingsContextType {
@@ -25,7 +27,12 @@ interface SettingsContextType {
   updateReadingFont: (font: string) => Promise<void>
   importFont: () => Promise<void>
   updateAutoHideOnMouseLeave: (enabled: boolean) => void
+  updateHideBookTitle: (enabled: boolean) => void
 }
+
+const HIDE_TITLE_KEY = 'readtime-hide-book-title'
+
+export const FONT_SIZE_RANGE = { min: 12, max: 24 } as const
 
 const SettingsContext = createContext<SettingsContextType | null>(null)
 export const AUTO_SCROLL_SPEEDS = [
@@ -49,12 +56,13 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     , AUTO_SCROLL_SPEEDS[1].value),
     readingFont: savedFont,
     customFonts: [],
-    autoHideOnMouseLeave: loadAutoHide()
+    autoHideOnMouseLeave: loadAutoHide(),
+    hideBookTitle: localStorage.getItem(HIDE_TITLE_KEY) === 'true'
   })
 
   const loadFont = useCallback(async (name: string) => {
     if (loadedFonts.current.has(name)) return
-    const data = await window.electronAPI.readFont(name)
+    const data = await window.desktop.readFont(name)
     const face = new FontFace(`ReadTime Custom ${name}`, data.buffer as ArrayBuffer)
     await face.load()
     document.fonts.add(face)
@@ -62,7 +70,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   useEffect(() => {
-    void window.electronAPI.listFonts().then(async fonts => {
+    void window.desktop.listFonts().catch(() => [] as string[]).then(async fonts => {
       setState(prev => ({ ...prev, customFonts: fonts }))
       const selected = /^"ReadTime Custom (.+)"$/.exec(savedFont)?.[1]
       if (selected && fonts.includes(selected)) await loadFont(selected)
@@ -71,9 +79,10 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
 
   const setTheme = useCallback((theme: Theme) => {
     themeManager.setTheme(theme)
+    const current = themeManager.getTheme()
     setState(prev => ({
       ...prev,
-      currentTheme: theme,
+      currentTheme: current,
       frequentThemes: themeManager.getFrequentThemes()
     }))
   }, [themeManager])
@@ -93,9 +102,48 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     setState(prev => ({ ...prev, currentTheme: themeManager.getTheme() }))
   }, [themeManager])
 
-  const toggleSettings = useCallback(() => {
-    setState(prev => ({ ...prev, showSettings: !prev.showSettings }))
+  // 托盘打开设置时若原本是迷你横条，关掉面板要还原回去
+  // 窗口被拖得太小时设置面板放不下：打开前临时撑开，关闭后带动画还原
+  const showSettingsRef = useRef(false)
+  showSettingsRef.current = state.showSettings
+
+  const toggleSettings = useCallback(async () => {
+    const opening = !showSettingsRef.current
+    try {
+      if (opening) await acquireWindowSpace()
+      else await releaseWindowSpace()
+    } catch (error) {
+      console.error('切换设置面板失败:', error)
+    } finally {
+      setState(prev => ({ ...prev, showSettings: opening }))
+    }
   }, [])
+
+  const openSettings = useCallback(() => {
+    if (state.showSettings) return
+    void toggleSettings()
+  }, [state.showSettings, toggleSettings])
+
+  const openSettingsRef = useRef(openSettings)
+  useEffect(() => {
+    openSettingsRef.current = openSettings
+  }, [openSettings])
+
+  useEffect(() => {
+    const stop = window.desktop.onOpenSettings(() => openSettingsRef.current())
+    return stop
+  }, [])
+
+  // 面板开着时用户自己拖动窗口，说明他改了主意：不再还原
+  useEffect(() => {
+    if (!state.showSettings) return
+    const onResize = () => {
+      if (isResizeFromUs()) return
+      dropWindowSpaceRestore()
+    }
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [state.showSettings])
 
   const updateAutoScrollSpeed = useCallback((speed: number) => {
     if (!AUTO_SCROLL_SPEEDS.some(option => option.value === speed)) return
@@ -107,12 +155,11 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     const selected = /^"ReadTime Custom (.+)"$/.exec(font)?.[1]
     if (selected) await loadFont(selected)
     localStorage.setItem('readtime-reading-font', font)
-    document.documentElement.style.setProperty('--reading-font', font)
     setState(prev => ({ ...prev, readingFont: font }))
   }, [loadFont])
 
   const importFont = useCallback(async () => {
-    const name = await window.electronAPI.importFont()
+    const name = await window.desktop.importFont()
     if (!name) return
     loadedFonts.current.delete(name)
     await loadFont(name)
@@ -124,9 +171,19 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     setState(prev => ({ ...prev, autoHideOnMouseLeave: enabled }))
   }, [])
 
+  const updateHideBookTitle = useCallback((enabled: boolean) => {
+    localStorage.setItem(HIDE_TITLE_KEY, String(enabled))
+    setState(prev => ({ ...prev, hideBookTitle: enabled }))
+  }, [])
+
   useEffect(() => {
     document.documentElement.style.setProperty('--reading-font', state.readingFont)
   }, [state.readingFont])
+
+  // 历史上可能存着 55 这类非档位值，被吸附后要回写，否则永远对不上
+  useEffect(() => {
+    localStorage.setItem('readtime-auto-scroll-speed', String(state.autoScrollSpeed))
+  }, [state.autoScrollSpeed])
 
   return (
     <SettingsContext.Provider value={{
@@ -139,7 +196,8 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       updateAutoScrollSpeed,
       updateReadingFont,
       importFont,
-      updateAutoHideOnMouseLeave
+      updateAutoHideOnMouseLeave,
+      updateHideBookTitle
     }}>
       {children}
     </SettingsContext.Provider>

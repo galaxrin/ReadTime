@@ -1,12 +1,13 @@
 import React, { createContext, useContext, useReducer, useCallback, useEffect, useRef } from 'react'
 import { Chapter, loadFile } from '../utils/fileParser'
-import { ProgressManager, Progress } from '../utils/progressManager'
+import { ProgressManager } from '../utils/progressManager'
+import { BookmarkManager } from '../utils/bookmarkManager'
 
 interface ReadingState {
   chapters: Chapter[]
   currentChapter: number
   currentLine: number
-  filePath: string | null
+  bookTitle: string | null
   books: BookRecord[]
   activeBook: BookRecord | null
   isLoading: boolean
@@ -30,7 +31,7 @@ const initialState: ReadingState = {
   chapters: [],
   currentChapter: 0,
   currentLine: 0,
-  filePath: null,
+  bookTitle: null,
   books: [],
   activeBook: null,
   isLoading: false,
@@ -46,7 +47,7 @@ function readingReducer(state: ReadingState, action: ReadingAction): ReadingStat
     case 'SET_CHAPTERS':
       return { ...state, chapters: action.payload }
     case 'SET_FILE_PATH':
-      return { ...state, filePath: action.payload }
+      return { ...state, bookTitle: action.payload }
     case 'SET_BOOKS':
       return { ...state, books: action.payload }
     case 'SET_ACTIVE_BOOK':
@@ -54,7 +55,8 @@ function readingReducer(state: ReadingState, action: ReadingAction): ReadingStat
     case 'SET_CURRENT_CHAPTER':
       return { ...state, currentChapter: action.payload, currentLine: 0 }
     case 'SET_CURRENT_LINE':
-      return { ...state, currentLine: action.payload }
+      // 自动滚动每个 rAF 都会派发一次，行号没变就别造新对象，避免全树重渲染
+      return state.currentLine === action.payload ? state : { ...state, currentLine: action.payload }
     case 'NEXT_CHAPTER':
       if (state.currentChapter < state.chapters.length - 1) {
         return { ...state, currentChapter: state.currentChapter + 1, currentLine: 0 }
@@ -66,7 +68,7 @@ function readingReducer(state: ReadingState, action: ReadingAction): ReadingStat
       }
       return state
     case 'RESET_READING':
-      return { ...state, chapters: [], currentChapter: 0, currentLine: 0, filePath: null, activeBook: null }
+      return { ...state, chapters: [], currentChapter: 0, currentLine: 0, bookTitle: null, activeBook: null }
     default:
       return state
   }
@@ -89,6 +91,7 @@ const ReadingContext = createContext<ReadingContextType | null>(null)
 export function ReadingProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(readingReducer, initialState)
   const stateRef = useRef(state)
+  const openSeqRef = useRef(0)
   const progressManagerRef = useRef<ProgressManager | null>(null)
 
   useEffect(() => {
@@ -103,12 +106,13 @@ export function ReadingProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const refreshBooks = useCallback(async () => {
-    const books = await window.electronAPI.listBooks()
+    const books = await window.desktop.listBooks()
     dispatch({ type: 'SET_BOOKS', payload: books })
     return books
   }, [])
 
   const openBook = useCallback(async (id: string) => {
+    const seq = ++openSeqRef.current
     dispatch({ type: 'SET_LOADING', payload: true })
     dispatch({ type: 'SET_ERROR', payload: null })
 
@@ -117,9 +121,11 @@ export function ReadingProvider({ children }: { children: React.ReactNode }) {
       if (current.activeBook) {
         getProgressManager().saveProgress(current.activeBook.id, current.currentChapter, current.currentLine)
       }
-      const { book, data } = await window.electronAPI.readBook(id)
-      const file = new File([new Uint8Array(data)], book.title)
+      const { book, data } = await window.desktop.readBook(id)
+      if (seq !== openSeqRef.current) return
+      const file = new File([data], book.title)
       const chapters = await loadFile(file)
+      if (seq !== openSeqRef.current) return
       const progress = getProgressManager().loadProgress(book.id)
         || getProgressManager().loadProgress(book.title)
       const chapter = Math.min(Math.max(progress?.chapter || 0, 0), Math.max(chapters.length - 1, 0))
@@ -131,20 +137,23 @@ export function ReadingProvider({ children }: { children: React.ReactNode }) {
       dispatch({ type: 'SET_CURRENT_CHAPTER', payload: chapter })
       dispatch({ type: 'SET_CURRENT_LINE', payload: line })
       if (progress && progress.filePath === book.title) {
+        // 老进度是按书名存的，迁到 id 后把旧键删掉，否则删书再导入同名文件会继承旧位置
         getProgressManager().saveProgress(book.id, chapter, line)
+        getProgressManager().removeProgress(book.title)
       }
-      await window.electronAPI.touchBook(book.id)
+      await window.desktop.touchBook(book.id)
       await refreshBooks()
     } catch (error) {
+      if (seq !== openSeqRef.current) return
       dispatch({ type: 'SET_ERROR', payload: error instanceof Error ? error.message : '无法打开书籍' })
     } finally {
-      dispatch({ type: 'SET_LOADING', payload: false })
+      if (seq === openSeqRef.current) dispatch({ type: 'SET_LOADING', payload: false })
     }
   }, [getProgressManager, refreshBooks])
 
   const importBook = useCallback(async (sourcePath?: string) => {
     try {
-      const book = await window.electronAPI.importBook(sourcePath)
+      const book = await window.desktop.importBook(sourcePath)
       if (book) await openBook(book.id)
     } catch (error) {
       dispatch({ type: 'SET_ERROR', payload: error instanceof Error ? error.message : '导入书籍失败' })
@@ -152,8 +161,9 @@ export function ReadingProvider({ children }: { children: React.ReactNode }) {
   }, [openBook])
 
   const removeBook = useCallback(async (id: string) => {
-    await window.electronAPI.removeBook(id)
+    await window.desktop.removeBook(id)
     getProgressManager().removeProgress(id)
+    new BookmarkManager().removeBook(id)
     const books = await refreshBooks()
     if (state.activeBook?.id !== id) return
     if (books[0]) await openBook(books[0].id)

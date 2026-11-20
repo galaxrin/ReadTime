@@ -17,6 +17,26 @@ export interface Theme {
 
 const STORAGE_KEY = 'readtime-theme'
 const USAGE_STORAGE_KEY = 'readtime-theme-usage'
+// 排版与主题分开存：切主题只换配色，不把用户调过的字号/行距/透明度打回默认
+const TYPOGRAPHY_KEY = 'readtime-typography'
+
+interface Typography {
+  fontSize: number
+  lineHeight: number
+  opacity: number
+}
+
+function clampTypography(input: Partial<Typography>, base: Typography): Typography {
+  return {
+    fontSize: typeof input.fontSize === 'number' ? Math.min(24, Math.max(12, input.fontSize)) : base.fontSize,
+    lineHeight: typeof input.lineHeight === 'number' ? Math.min(2.5, Math.max(1.2, input.lineHeight)) : base.lineHeight,
+    opacity: typeof input.opacity === 'number' ? Math.min(1, Math.max(0.1, input.opacity)) : base.opacity
+  }
+}
+
+function saveTypography(typography: Typography) {
+  localStorage.setItem(TYPOGRAPHY_KEY, JSON.stringify(typography))
+}
 
 interface ThemeUsage {
   count: number
@@ -250,17 +270,45 @@ function loadSavedTheme(): Theme {
   }
 }
 
+function readTypographyParts(source: unknown): Partial<Typography> {
+  if (!source || typeof source !== 'object') return {}
+  const value = source as Partial<Typography>
+  return {
+    fontSize: typeof value.fontSize === 'number' ? value.fontSize : undefined,
+    lineHeight: typeof value.lineHeight === 'number' ? value.lineHeight : undefined,
+    opacity: typeof value.opacity === 'number' ? value.opacity : undefined
+  }
+}
+
+function loadTypography(): Typography {
+  // 缺少字段时优先沿用旧主题里存过的排版，最后才退回主题默认
+  const legacy = readTypographyParts(loadSavedTheme())
+  const base = clampTypography(legacy, defaultThemes[0])
+
+  try {
+    const raw = localStorage.getItem(TYPOGRAPHY_KEY)
+    if (raw) return clampTypography(readTypographyParts(JSON.parse(raw)), base)
+  } catch {
+    // 落到下面按迁移处理
+  }
+  // 这里不写盘：构造函数在 StrictMode 下会被执行两次，迁移后的保存交给首次 update
+  return base
+}
+
 export class ThemeManager {
   private currentTheme: Theme
+  private typography: Typography
   private usage = loadThemeUsage()
 
   constructor() {
-    this.currentTheme = loadSavedTheme()
+    this.typography = loadTypography()
+    this.currentTheme = { ...loadSavedTheme(), ...this.typography }
     this.applyTheme()
   }
 
   setTheme(theme: Theme) {
-    this.currentTheme = theme
+    // 只取主题的配色，排版沿用用户设置
+    this.currentTheme = { ...theme, ...this.typography }
     this.applyTheme()
     this.save()
     this.recordThemeUse(theme)
@@ -283,25 +331,47 @@ export class ThemeManager {
   }
 
   updateFontSize(size: number) {
-    this.currentTheme = { ...this.currentTheme, fontSize: size }
+    this.typography = clampTypography({ ...this.typography, fontSize: size }, this.typography)
+    this.currentTheme = { ...this.currentTheme, ...this.typography }
+    saveTypography(this.typography)
     this.applyTheme()
     this.save()
   }
 
   updateLineHeight(height: number) {
-    this.currentTheme = { ...this.currentTheme, lineHeight: height }
+    this.typography = clampTypography({ ...this.typography, lineHeight: height }, this.typography)
+    this.currentTheme = { ...this.currentTheme, ...this.typography }
+    saveTypography(this.typography)
     this.applyTheme()
     this.save()
   }
 
   updateOpacity(opacity: number) {
-    this.currentTheme = { ...this.currentTheme, opacity }
+    this.typography = clampTypography({ ...this.typography, opacity }, this.typography)
+    this.currentTheme = { ...this.currentTheme, ...this.typography }
+    saveTypography(this.typography)
     this.applyTheme()
     this.save()
   }
 
   private save() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(this.currentTheme))
+    // 只存配色；排版有独立的 readtime-typography，避免同一份数据两个键各写一半
+    const theme = this.currentTheme
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        id: theme.id,
+        textColor: theme.textColor,
+        textShadow: theme.textShadow,
+        appBackground: theme.appBackground,
+        readerBackground: theme.readerBackground,
+        surfaceBackground: theme.surfaceBackground,
+        controlBackground: theme.controlBackground,
+        borderColor: theme.borderColor,
+        mutedColor: theme.mutedColor,
+        accentColor: theme.accentColor
+      })
+    )
   }
 
   private recordThemeUse(theme: Theme) {

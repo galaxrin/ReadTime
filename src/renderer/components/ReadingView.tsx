@@ -1,6 +1,7 @@
 // src/renderer/components/ReadingView.tsx
 import React, { useRef, useEffect, useCallback } from 'react'
 import { useReading } from '../contexts/ReadingContext'
+import { useSettings } from '../contexts/SettingsContext'
 import { ProgressManager } from '../utils/progressManager'
 import {
   nextScrollPosition,
@@ -12,8 +13,10 @@ import './ReadingView.css'
 const DEFAULT_LINE_HEIGHT = 24
 const SAVE_DEBOUNCE_MS = 1000
 
+// line-height 只写在 .chapter-content 上，从容器取会拿到 "normal" 而退化成常数
 function parseLineHeight(el: HTMLElement): number {
-  const raw = parseInt(getComputedStyle(el).lineHeight, 10)
+  const target = (el.querySelector('.chapter-content') as HTMLElement | null) ?? el
+  const raw = parseInt(getComputedStyle(target).lineHeight, 10)
   return Number.isNaN(raw) ? DEFAULT_LINE_HEIGHT : raw
 }
 
@@ -26,13 +29,14 @@ interface ReadingViewProps {
 
 export function ReadingView({ autoScrolling, speed, onPause, onManualScroll }: ReadingViewProps) {
   const { state, setCurrentLine, nextChapter, prevChapter } = useReading()
+  const { state: settingsState } = useSettings()
   const contentRef = useRef<HTMLDivElement>(null)
   const progressManagerRef = useRef<ProgressManager | null>(null)
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const chapterAdvanceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const returnToChapterEndRef = useRef(false)
 
-  const { chapters, currentChapter, currentLine, filePath, activeBook, isLoading, error } = state
+  const { chapters, currentChapter, currentLine, bookTitle, activeBook, isLoading, error } = state
 
   // Lazily initialize ProgressManager once
   const getProgressManager = useCallback(() => {
@@ -91,13 +95,9 @@ export function ReadingView({ autoScrolling, speed, onPause, onManualScroll }: R
     if (currentLine > 0) element.scrollTop = currentLine * parseLineHeight(element)
   }, [activeBook?.id, currentChapter]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleScroll = () => {
-    if (contentRef.current) {
-      const lineHeight = parseLineHeight(contentRef.current)
-      const scrolledLines = Math.floor(contentRef.current.scrollTop / lineHeight)
-      setCurrentLine(scrolledLines)
-    }
-  }
+  // 滚动事件很密（自动滚动每帧都写 scrollTop），合并到每帧一次，并按章节缓存行高
+  const scrollFrameRef = useRef<number | null>(null)
+  const lineHeightRef = useRef<{ chapter: number; value: number } | null>(null)
 
   const handleWheel = (event: React.WheelEvent<HTMLDivElement>) => {
     onPause()
@@ -125,6 +125,20 @@ export function ReadingView({ autoScrolling, speed, onPause, onManualScroll }: R
     chapterAdvanceTimerRef.current = setTimeout(() => {
       chapterAdvanceTimerRef.current = null
     }, 500)
+  }
+
+  const handleScroll = () => {
+    if (scrollFrameRef.current !== null) return
+    scrollFrameRef.current = requestAnimationFrame(() => {
+      scrollFrameRef.current = null
+      const element = contentRef.current
+      if (!element) return
+      if (!lineHeightRef.current || lineHeightRef.current.chapter !== currentChapter) {
+        lineHeightRef.current = { chapter: currentChapter, value: parseLineHeight(element) }
+      }
+      const scrolledLines = Math.floor(element.scrollTop / lineHeightRef.current.value)
+      setCurrentLine(scrolledLines)
+    })
   }
 
   useEffect(() => {
@@ -172,7 +186,7 @@ export function ReadingView({ autoScrolling, speed, onPause, onManualScroll }: R
     return <div className="no-file-message">{error}</div>
   }
 
-  if (!filePath || chapters.length === 0) {
+  if (!bookTitle || chapters.length === 0) {
     return <div className="no-file-message">拖拽文件到此处开始阅读</div>
   }
 
@@ -195,10 +209,11 @@ export function ReadingView({ autoScrolling, speed, onPause, onManualScroll }: R
       }}
       onClick={onPause}
     >
-      <header className="reader-header">
-        <span className="book-name">{filePath}</span>
-        <span className="chapter-count">{currentChapter + 1} / {chapters.length}</span>
-      </header>
+      {!settingsState.hideBookTitle && (
+        <header className="reader-header">
+          <span className="book-name">{bookTitle}</span>
+        </header>
+      )}
       <article className="reader-copy">
         <h1 className="chapter-title">{chapter.title}</h1>
         <div className="chapter-content">{chapter.content}</div>

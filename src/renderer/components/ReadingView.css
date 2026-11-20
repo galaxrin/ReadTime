@@ -1,22 +1,26 @@
 .app-shell {
+  /* 动画节奏统一在这里定义：hover 用 fast，常规过渡 base，主题切换等慢变量用 slow */
+  --motion-fast: 150ms;
+  --motion-base: 200ms;
+  --motion-slow: 260ms;
+  --motion-ease: cubic-bezier(.4, 0, .2, 1);
+  position: relative;
   width: 100%;
   height: 100vh;
   overflow: hidden;
   background: var(--app-background);
   color: var(--text-color);
-  transition: background 240ms ease, color 240ms ease;
+  border-radius: 20px;
+  transition: background var(--motion-slow) var(--motion-ease), color var(--motion-slow) var(--motion-ease);
 }
 
+/* 显隐瞬时完成（opacity 不带过渡），主题切换的渐变不受影响。保留命中测试，光标移入仍可恢复 */
 .app-shell.auto-hidden {
-  background: transparent;
-}
-
-.app-shell.auto-hidden > * {
-  visibility: hidden;
+  opacity: 0;
 }
 
 .window-drag-region {
-  position: fixed;
+  position: absolute;
   z-index: 30;
   top: 0;
   right: 0;
@@ -24,7 +28,6 @@
   height: 30px;
   cursor: grab;
   user-select: none;
-  -webkit-app-region: drag;
 }
 
 .window-drag-region:active { cursor: grabbing }
@@ -36,7 +39,7 @@
   left: 50%;
   width: 36px;
   height: 3px;
-  border-radius: 99px;
+  border-radius: 999px;
   background: var(--muted-color);
   opacity: .38;
   transform: translateX(-50%);
@@ -48,8 +51,8 @@
   padding: 22px 28px 88px;
   overflow-y: auto;
   background: var(--reader-background);
-  border-radius: 18px;
-  transition: background 240ms ease;
+  border-radius: 20px;
+  transition: background var(--motion-slow) var(--motion-ease);
 }
 
 [data-theme="glass"] .reading-view {
@@ -129,7 +132,7 @@
   padding: 40px;
   color: var(--text-color);
   background: var(--reader-background);
-  border-radius: 18px;
+  border-radius: 20px;
   font-family: Georgia, "Songti SC", serif;
   font-size: 17px;
   letter-spacing: .04em;
@@ -143,8 +146,108 @@
   width: 54px;
   height: 54px;
   margin-bottom: 18px;
-  border-radius: 18px;
+  border-radius: 20px;
   background: var(--control-background);
   font-size: 22px;
   font-style: italic;
+}
+
+/* 窄窗口：隐藏控制栏，只留左下角的浮动控件 */
+.app-shell.narrow-mode .control-bar { display: none }
+
+.app-shell.narrow-mode .reading-view {
+  padding: 16px 16px 52px;
+  border-radius: 14px;
+}
+
+/* 浮动控件：平时是一颗圆形播放按钮，唤出菜单时向右长成胶囊 */
+.floating-controls {
+  position: absolute;
+  z-index: 25;
+  left: 10px;
+  bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  width: 34px;
+  height: 34px;
+  /* 四周各留 3px，内部 28px 按钮的圆形选中底色不会贴到胶囊边缘 */
+  padding: 3px;
+  overflow: hidden;
+  color: var(--text-color);
+  background: color-mix(in srgb, var(--text-color) 9%, transparent);
+  border-radius: 999px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--motion-fast) var(--motion-ease), width var(--motion-base) var(--motion-ease);
+}
+
+.floating-controls.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.floating-controls.expanded {
+  /* 4 个 28px 按钮 + 3 段 2px 间距 + 左右各 3px 内边距 */
+  width: 124px;
+}
+
+.floating-controls > button {
+  flex: 0 0 28px;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.floating-controls > button:hover {
+  background: color-mix(in srgb, var(--text-color) 11%, transparent);
+}
+
+.floating-controls .floating-extra {
+  opacity: 0;
+  transition: opacity var(--motion-fast) var(--motion-ease);
+}
+
+.floating-controls.expanded .floating-extra {
+  opacity: 1;
+}
+
+.floating-controls:not(.expanded) .floating-extra {
+  pointer-events: none;
+}
+
+.floating-controls.active .floating-play {
+  color: var(--accent-color);
+}
+
+.floating-controls .play-pause-icon svg {
+  width: 11px;
+  height: 11px;
+  display: block;
+}
+
+.floating-controls .app-icon svg {
+  width: 13px;
+  height: 13px;
+  display: block;
+}
+
+
+/* 系统开启“减少动效”时，所有过渡与入场动画都直接生效，不做过渡 */
+@media (prefers-reduced-motion: reduce) {
+  .app-shell,
+  .app-shell *,
+  .settings-backdrop,
+  .settings-panel,
+  .toc-popover {
+    transition: none !important;
+    animation: none !important;
+  }
 }

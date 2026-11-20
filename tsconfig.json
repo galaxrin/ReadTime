@@ -12,5 +12,5 @@
     "rootDir": "./src"
   },
   "include": ["src/renderer/**/*"],
-  "exclude": ["src/**/*.test.ts", "src/**/*.test.tsx", "src/**/__tests__/**", "src/main/**/*", "src/preload/**/*"]
+  "exclude": ["src/**/*.test.ts", "src/**/*.test.tsx", "src/**/__tests__/**"]
 }

@@ -1,6 +1,10 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App'
+import './fonts.css'
+import { desktop } from './utils/desktop'
+
+window.desktop = desktop
 
 const rootElement = document.getElementById('root')
 

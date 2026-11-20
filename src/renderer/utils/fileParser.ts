@@ -17,35 +17,30 @@ export function resolveEpubTitle(
   })?.label.trim() || `章节 ${index + 1}`
 }
 
-export function detectEncoding(buffer: Uint8Array): string {
-  // Check for BOM
+function decodeTxt(buffer: Uint8Array): { encoding: string; text: string } {
   if (buffer[0] === 0xEF && buffer[1] === 0xBB && buffer[2] === 0xBF) {
-    return 'utf-8'
+    return { encoding: 'utf-8', text: new TextDecoder('utf-8').decode(buffer) }
   }
   if (buffer[0] === 0xFF && buffer[1] === 0xFE) {
-    return 'utf-16le'
+    return { encoding: 'utf-16le', text: new TextDecoder('utf-16le').decode(buffer) }
   }
   if (buffer[0] === 0xFE && buffer[1] === 0xFF) {
-    return 'utf-16be'
+    return { encoding: 'utf-16be', text: new TextDecoder('utf-16be').decode(buffer) }
   }
-
-  // Try UTF-8 first
   try {
-    const text = new TextDecoder('utf-8', { fatal: true }).decode(buffer)
-    if (!text.includes('\ufffd')) {
-      return 'utf-8'
-    }
+    return { encoding: 'utf-8', text: new TextDecoder('utf-8', { fatal: true }).decode(buffer) }
   } catch {
-    // Not UTF-8
+    // 中文 TXT 常见 GBK
+    return { encoding: 'gbk', text: new TextDecoder('gbk').decode(buffer) }
   }
+}
 
-  // Default to GBK for Chinese content
-  return 'gbk'
+export function detectEncoding(buffer: Uint8Array): string {
+  return decodeTxt(buffer).encoding
 }
 
 export function parseTxtFile(buffer: Uint8Array): Chapter[] {
-  const encoding = detectEncoding(buffer)
-  const content = new TextDecoder(encoding).decode(buffer)
+  const { text: content } = decodeTxt(buffer)
 
   const chapterPattern = /^(?:第[一二三四五六七八九十百千万零〇\d]+[章节回卷]|Chapter\s+\d+|\d+[.、]\s*)/i
   const lines = content.split('\n')

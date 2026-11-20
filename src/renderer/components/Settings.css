@@ -1,5 +1,16 @@
+@keyframes backdrop-in {
+  from { opacity: 0 }
+  to { opacity: 1 }
+}
+
+@keyframes panel-in {
+  from { opacity: 0; transform: translateY(10px) scale(.97) }
+  to { opacity: 1; transform: translateY(0) scale(1) }
+}
+
 .settings-backdrop {
-  position: fixed;
+  animation: backdrop-in var(--motion-fast) var(--motion-ease);
+  position: absolute;
   z-index: 40;
   inset: 0;
   display: grid;
@@ -7,10 +18,10 @@
   padding: 16px;
   background: rgba(7, 9, 11, .3);
   backdrop-filter: blur(5px);
-  -webkit-app-region: no-drag;
 }
 
 .settings-panel {
+  animation: panel-in var(--motion-base) var(--motion-ease);
   position: relative;
   width: min(360px, 100%);
   max-height: calc(100vh - 32px);
@@ -18,7 +29,7 @@
   overflow-y: auto;
   color: var(--text-color);
   background: var(--surface-background);
-  border-radius: 18px;
+  border-radius: 20px;
   box-shadow: 0 26px 70px rgba(0, 0, 0, .28);
   backdrop-filter: blur(28px) saturate(130%);
   scrollbar-width: none;
@@ -49,14 +60,14 @@
   border: 0;
   border-radius: 999px;
   cursor: pointer;
-  transition: background 160ms ease;
+  transition: background var(--motion-fast) var(--motion-ease);
 }
 .toggle-row input::before {
   content: "OFF";
   position: absolute;
   top: 50%;
   right: 6px;
-  font-size: 8px;
+  font-size: 9px;
   font-weight: 700;
   letter-spacing: .04em;
   transform: translateY(-50%);
@@ -71,7 +82,7 @@
   background: #fff;
   border-radius: 50%;
   box-shadow: 0 1px 4px rgba(0, 0, 0, .28);
-  transition: transform 160ms ease;
+  transition: transform var(--motion-fast) var(--motion-ease);
 }
 .toggle-row input:checked { background: var(--accent-color) }
 .toggle-row input:checked::before {
@@ -124,10 +135,10 @@
   width: 100%;
   margin-top: 10px;
   padding: 10px 8px;
-  border-radius: 10px;
+  border-radius: 12px;
 }
 .all-themes-button:hover, .all-themes-button:focus-visible {
-  background: color-mix(in srgb, var(--text-color) 8%, transparent);
+  background: color-mix(in srgb, var(--text-color) 9%, transparent);
 }
 
 .theme-buttons {
@@ -148,14 +159,14 @@
   color: inherit;
   background: color-mix(in srgb, var(--surface-background) 76%, transparent);
   border: 0;
-  border-radius: 14px;
+  border-radius: 12px;
   cursor: pointer;
   text-align: left;
-  transition: background 150ms ease, transform 150ms ease;
+  transition: background var(--motion-fast) var(--motion-ease), transform var(--motion-fast) var(--motion-ease);
 }
 
 .theme-button:hover {
-  background: color-mix(in srgb, var(--text-color) 10%, var(--surface-background));
+  background: color-mix(in srgb, var(--text-color) 9%, var(--surface-background));
   transform: translateY(-2px);
 }
 .theme-button.active {
@@ -170,7 +181,7 @@
   height: 52px;
   margin-bottom: 8px;
   overflow: hidden;
-  border-radius: 9px;
+  border-radius: 10px;
 }
 
 .theme-swatch > span {
@@ -188,7 +199,7 @@
   height: 3px;
   appearance: none;
   background: color-mix(in srgb, var(--muted-color) 28%, transparent);
-  border-radius: 99px;
+  border-radius: 999px;
   outline: none;
 }
 
@@ -218,21 +229,12 @@
   color: var(--muted-color);
   background: transparent;
   border: 0;
-  border-radius: 9px;
+  border-radius: 10px;
   cursor: pointer;
   font-size: 20px;
 }
 
 .close-button:hover, .close-button:focus-visible { outline:none; background:color-mix(in srgb,var(--text-color) 9%,transparent) }
-.settings-hint {
-  margin: 0;
-  padding: 11px 12px;
-  color: var(--muted-color);
-  background: color-mix(in srgb, var(--surface-background) 70%, transparent);
-  border-radius: 12px;
-  font-size: 10px;
-  line-height: 1.55;
-}
 .settings-signature {
   margin: 12px 0 0;
   color: var(--muted-color);
@@ -248,8 +250,13 @@
 .font-select { min-width:0; flex:1; padding:9px 10px; color:var(--text-color); background:var(--surface-background); border:0; border-radius:10px; outline:none }
 .font-select:focus { background:color-mix(in srgb,var(--accent-color) 14%,var(--surface-background)) }
 .font-import { padding:0 10px; color:var(--text-color); background:transparent; border:0; border-radius:10px; cursor:pointer }
-.shortcut-reset:hover, .shortcut-reset:focus-visible, .font-import:hover, .font-import:focus-visible { outline:none; background:color-mix(in srgb,var(--text-color) 10%,transparent) }
+.shortcut-reset:hover, .shortcut-reset:focus-visible, .font-import:hover, .font-import:focus-visible { outline:none; background:color-mix(in srgb,var(--text-color) 9%,transparent) }
 .speed-options { display:grid; grid-template-columns:repeat(3,1fr); gap:8px }
 .speed-options button { padding:8px 0; color:var(--muted-color); background:transparent; border:0; border-radius:9px; cursor:pointer }
 .speed-options button:hover, .speed-options button:focus-visible { outline:none; background:color-mix(in srgb,var(--text-color) 9%,transparent) }
 .speed-options button.active { color:var(--accent-color); background:color-mix(in srgb,var(--accent-color) 16%,transparent) }
+
+.stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px }
+.stats-row > div { display: grid; gap: 2px; padding: 9px 6px; text-align: center; border-radius: 12px; background: color-mix(in srgb, var(--surface-background) 70%, transparent) }
+.stats-row strong { font-size: 11px; font-weight: 600; color: var(--text-color) }
+.stats-row span { font-size: 9px; color: var(--muted-color) }
